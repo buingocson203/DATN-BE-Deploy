@@ -15,10 +15,17 @@ export const signUp = async (req, res) => {
       });
     }
 
-    const useExists = await User.findOne({ email: req.body.email });
+    const useExists = await User.findOne({ email: req.body.email});
     if (useExists) {
       return res.status(400).json({
         message: "Email đã tồn tại",
+      });
+    }
+
+    const userNameExists = await User.findOne({ userName: req.body.userName });
+    if (userNameExists) {
+      return res.status(400).json({
+        message: "Tên đăng nhập đã tồn tại",
       });
     }
 

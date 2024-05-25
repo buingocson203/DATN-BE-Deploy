@@ -21,6 +21,21 @@ const productSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category",
         require: true
+    },
+    sizeId: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Variant",
+        require: true
+    }],
+    color: {
+        type: String,
+        require: true,
+        minLength: 1,
+    },
+    priceSale: {
+        type: Number,
+        require: true,
+        minLength: 1
     }
 }, { timestamps: true, versionKey: false });
 productSchema.plugin(mongoosePaginate)

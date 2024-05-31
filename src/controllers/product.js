@@ -103,6 +103,7 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
+    // Validate incoming request data
     const { error } = productValid.validate(req.body);
     if (error) {
       return res.status(400).json({
@@ -110,6 +111,15 @@ export const update = async (req, res) => {
       });
     }
 
+    // Check if product exists before updating
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        message: "Sản phẩm không tồn tại",
+      });
+    }
+
+    // Update product
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!product) {
       return res.status(404).json({
@@ -117,6 +127,7 @@ export const update = async (req, res) => {
       });
     }
 
+    // Update category
     const updateCategory = await Category.findByIdAndUpdate(product.categoryId, {
       $addToSet: {
         products: product._id,
@@ -128,11 +139,12 @@ export const update = async (req, res) => {
       });
     }
 
+    // Update sizes
     const updateSizes = await Variant.updateMany(
       { _id: { $in: product.sizeId } },
       { $addToSet: { products: product._id } }
     );
-    if (!updateSizes.nModified) {
+    if (updateSizes.modifiedCount === 0) {
       return res.status(404).json({
         message: "Cập nhật size không thành công",
       });
@@ -150,44 +162,73 @@ export const update = async (req, res) => {
 };
 
 
+
+// export const remove = async (req, res) => {
+//   try {
+//     const product = await Product.findByIdAndDelete(req.params.id);
+//     if (!product) {
+//       return res.status(400).json({
+//         message: "Xóa không thành công sản phẩm",
+//       });
+//     }
+
+//     const updateCategory = await Category.findByIdAndRemove(product.categoryId, {
+//       $pull: {
+//         products: product._id,
+//       },
+//     });
+//     if (!updateCategory) {
+//       return res.status(404).json({
+//         message: "Cập nhật category không thành công",
+//       });
+//     }
+
+//     const updateSizes = await Variant.findByIdAndRemove(
+//       { _id: { $in: product.sizeId } },
+//       { $pull: { products: product._id } }
+//     );
+//     if (!updateSizes.nModified) {
+//       return res.status(404).json({
+//         message: "Cập nhật size không thành công",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       message: "Xóa sản phẩm thành công",
+//       datas: product,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
 export const remove = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
+    const product =await Product.findByIdAndDelete(req.params.id)
+    if(!product) {
       return res.status(400).json({
-        message: "Xóa không thành công sản phẩm",
+        message: "Xoa khong thanh cong san pham",
       });
     }
-
-    const updateCategory = await Category.findByIdAndUpdate(product.categoryId, {
-      $pull: {
-        products: product._id,
-      },
+    const updateCategory = await Category.findByIdAndRemove(product.categoryId, {
+      $addToSet: {
+      products: product._id
+    }})
+    if(!updateCategory){
+      return res.status(404).json({
+      message: "Cap nhat categori khong thanh cong",
     });
-    if (!updateCategory) {
-      return res.status(404).json({
-        message: "Cập nhật category không thành công",
-      });
     }
-
-    const updateSizes = await Variant.updateMany(
-      { _id: { $in: product.sizeId } },
-      { $pull: { products: product._id } }
-    );
-    if (!updateSizes.nModified) {
-      return res.status(404).json({
-        message: "Cập nhật size không thành công",
-      });
-    }
-
     return res.status(200).json({
-      message: "Xóa sản phẩm thành công",
+      message: "Xoa san pham thanh cong",
       datas: product,
-    });
+    })
   } catch (error) {
     return res.status(500).json({
-      message: error.message,
+      message: error,
     });
   }
+  
 };
-

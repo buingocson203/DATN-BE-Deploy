@@ -32,10 +32,28 @@ const productSchema = new mongoose.Schema({
         require: true,
         minLength: 1,
     },
-    priceSale: {
+    importPrice: {
         type: Number,
-        require: true,
-        minLength: 1
+        required: true,
+        minLength: 1,
+    },
+    promotionalPrice: {
+        type: Number,
+        required: true,
+        minLength: 1,
+    },
+    IdImages: [{
+        type: String,
+        required: true,
+    }],
+    quanity: {
+        type: Number,
+        required: true,
+        minLength: 1,
+    },
+    status: {
+        type: String,
+        required: true,
     }
 }, { timestamps: true, versionKey: false });
 productSchema.plugin(mongoosePaginate)

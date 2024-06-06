@@ -1,6 +1,6 @@
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
-import Variant from "../models/Variant.js";
+import Size from "../models/Size.js";
 import { productValid } from "../validation/product.js";
 
 export const getList = async (req, res) => {
@@ -79,7 +79,7 @@ export const create = async (req, res) => {
       });
     }
 
-    const updateSizes = await Variant.updateMany(
+    const updateSizes = await Size.updateMany(
       { _id: { $in: product.sizeId } },
       { $addToSet: { products: product._id } }
     );
@@ -140,7 +140,7 @@ export const update = async (req, res) => {
     }
 
     // Update sizes
-    const updateSizes = await Variant.updateMany(
+    const updateSizes = await Size.updateMany(
       { _id: { $in: product.sizeId } },
       { $addToSet: { products: product._id } }
     );

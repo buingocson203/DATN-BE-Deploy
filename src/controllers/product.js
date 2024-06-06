@@ -1,6 +1,6 @@
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
-import Variant from "../models/Variant.js";
+import Size from "../models/Size.js";
 import { productValid } from "../validation/product.js";
 
 export const getList = async (req, res) => {
@@ -80,6 +80,16 @@ export const create = async (req, res) => {
       });
     }
 
+    const updateSizes = await Size.updateMany(
+      { _id: { $in: product.sizeId } },
+      { $addToSet: { products: product._id } }
+    );
+    if (updateSizes.nModified === 0) {
+      return res.status(404).json({
+        message: "Cập nhật size không thành công",
+      });
+    }
+
     return res.status(200).json({
       message: "Tạo thành công sản phẩm",
       datas: product,
@@ -129,6 +139,17 @@ export const update = async (req, res) => {
     if (!updateCategory) {
       return res.status(404).json({
         message: "Cập nhật category không thành công",
+      });
+    }
+
+    // Update sizes
+    const updateSizes = await Size.updateMany(
+      { _id: { $in: product.sizeId } },
+      { $addToSet: { products: product._id } }
+    );
+    if (updateSizes.modifiedCount === 0) {
+      return res.status(404).json({
+        message: "Cập nhật size không thành công",
       });
     }
 

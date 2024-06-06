@@ -1,16 +1,16 @@
-import Variant from "../models/Variant.js";
-import { variantValid } from "../validation/variant.js";
+import Size from "../models/Size.js";
+import { sizeValid } from "../validation/size.js";
 
 export const getAll = async (req, res) => {
   try {
-    const data = await Variant.find({}).populate("products");
+    const data = await Size.find({}).populate("products");
     if (!data || data.length === 0) {
       return res.status(404).json({
-        message: "No Variant",
+        message: "No Size",
       });
     }
     return res.status(200).json({
-      message: "Variant has been",
+      message: "Size has been",
       data: data,
     });
   } catch (error) {
@@ -23,14 +23,14 @@ export const getAll = async (req, res) => {
 
 export const getDetail = async (req, res) => {
   try {
-    const data = await Variant.findById(req.params.id).populate("products");
+    const data = await Size.findById(req.params.id).populate("products");
     if (!data) {
       return res.status(404).json({
-        message: "No Variant",
+        message: "No Size",
       });
     }
     return res.status(200).json({
-      message: "Variant has been",
+      message: "Size has been",
       data: data,
     });
   } catch (error) {
@@ -43,21 +43,21 @@ export const getDetail = async (req, res) => {
 
 export const create = async (req, res) => {
   try {
-    const { error } = variantValid.validate(req.body, { abortEarly: false });
+    const { error } = sizeValid.validate(req.body, { abortEarly: false });
     if (error) {
       const errors = error.details.map((err) => err.message);
       return res.status(400).json({
         message: errors,
       });
     }
-    const data = await Variant.create(req.body);
+    const data = await Size.create(req.body);
     if (!data) {
       return res.status(404).json({
-        message: "Create variant Not Successful",
+        message: "Create Size Not Successful",
       });
     }
     return res.status(200).json({
-      message: "Create variant Successful",
+      message: "Create Size Successful",
       data: data,
     });
   } catch (error) {
@@ -70,23 +70,23 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
-    const { error } = variantValid.validate(req.body, { abortEarly: false });
+    const { error } = sizeValid.validate(req.body, { abortEarly: false });
     if (error) {
       const errors = error.details.map((err) => err.message);
       return res.status(400).json({
         message: errors,
       });
     }
-    const data = await Variant.findByIdAndUpdate(req.params.id, req.body, {
+    const data = await Size.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
     if (!data) {
       return res.status(404).json({
-        message: "Update Variant Not Successful",
+        message: "Update Size Not Successful",
       });
     }
     return res.status(200).json({
-      message: "Update Variant Successful",
+      message: "Update Size Successful",
       data: data,
     });
   } catch (error) {
@@ -99,14 +99,14 @@ export const update = async (req, res) => {
 
 export const remove = async (req, res) => {
   try {
-    const data = await Variant.findByIdAndDelete(req.params.id);
+    const data = await Size.findByIdAndDelete(req.params.id);
     if (!data) {
       return res.status(404).json({
-        message: "Delete Variant Not Successful",
+        message: "Delete Size Not Successful",
       });
     }
     return res.status(200).json({
-      message: "Delete Variant Successful",
+      message: "Delete Size Successful",
       data: data,
     });
   } catch (error) {

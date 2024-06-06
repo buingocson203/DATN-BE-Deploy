@@ -1,6 +1,8 @@
 
 import Category from "../models/Category.js"
 import { categoryValid } from "../validation/category.js"
+import ProductDetail from "../models/ProductDetail.js"
+import Product from "../models/Product.js"
 
 export const getAll = async (req, res) => {
     try {
@@ -98,21 +100,31 @@ export const update = async (req, res) => {
 
 export const remove = async (req, res) => {
     try {
-        
-        const data = await Category.findByIdAndDelete(req.params.id)
-        if(!data){
+        // Check if there are products linked to the category
+        const hasProducts = await Product.exists({ categoryId: req.params.id });
+
+        if (hasProducts) {
+            return res.status(400).json({
+                message: "Không thể xóa danh mục có sản phẩm liên kết",
+            });
+        }
+
+        // If no products are linked, proceed to delete the category
+        const data = await Category.findByIdAndDelete(req.params.id);
+        if (!data) {
             return res.status(404).json({
                 message: "Delete Category Not Successful"
-            })
+            });
         }
+
         return res.status(200).json({
             message: "Delete Category Successful",
             data: data
-        })
+        });
     } catch (error) {
         return res.status(500).json({
             name: error.name,
             message: error.message
-        })
+        });
     }
-}
+};

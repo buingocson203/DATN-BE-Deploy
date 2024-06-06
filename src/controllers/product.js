@@ -34,7 +34,7 @@ export const getList = async (req, res) => {
 
 export const getDetail = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('categoryId').populate('sizeId');
+    const product = await Product.findById(req.params.id).populate('categoryId');
     if (!product) {
       return res.status(404).json({
         message: "Không tìm thấy sản phẩm",
@@ -50,6 +50,7 @@ export const getDetail = async (req, res) => {
     });
   }
 };
+
 
 
 export const create = async (req, res) => {
@@ -99,6 +100,8 @@ export const create = async (req, res) => {
     });
   }
 };
+
+
 
 
 export const update = async (req, res) => {
@@ -162,47 +165,6 @@ export const update = async (req, res) => {
 };
 
 
-
-// export const remove = async (req, res) => {
-//   try {
-//     const product = await Product.findByIdAndDelete(req.params.id);
-//     if (!product) {
-//       return res.status(400).json({
-//         message: "Xóa không thành công sản phẩm",
-//       });
-//     }
-
-//     const updateCategory = await Category.findByIdAndRemove(product.categoryId, {
-//       $pull: {
-//         products: product._id,
-//       },
-//     });
-//     if (!updateCategory) {
-//       return res.status(404).json({
-//         message: "Cập nhật category không thành công",
-//       });
-//     }
-
-//     const updateSizes = await Variant.findByIdAndRemove(
-//       { _id: { $in: product.sizeId } },
-//       { $pull: { products: product._id } }
-//     );
-//     if (!updateSizes.nModified) {
-//       return res.status(404).json({
-//         message: "Cập nhật size không thành công",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       message: "Xóa sản phẩm thành công",
-//       datas: product,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: error.message,
-//     });
-//   }
-// };
 
 export const remove = async (req, res) => {
   try {

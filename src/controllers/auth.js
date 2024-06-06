@@ -15,7 +15,7 @@ export const signUp = async (req, res) => {
       });
     }
 
-    const useExists = await User.findOne({ email: req.body.email});
+    const useExists = await User.findOne({ email: req.body.email });
     if (useExists) {
       return res.status(400).json({
         message: "Email đã tồn tại",
@@ -73,7 +73,9 @@ export const signIn = async (req, res) => {
       });
     }
 
-    const accessToken = jwt.sign({ _id: user._id }, SECRET_CODE, {expiresIn: "1d"} );
+    const accessToken = jwt.sign({ _id: user._id }, SECRET_CODE, {
+      expiresIn: "1d",
+    });
 
     user.password = undefined;
     return res.status(200).json({

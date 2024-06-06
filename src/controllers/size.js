@@ -1,6 +1,6 @@
 import Size from "../models/Size.js";
 import { sizeValid } from "../validation/size.js";
-
+import ProductDetail from "../models/ProductDetail.js";
 export const getAll = async (req, res) => {
   try {
     const data = await Size.find({}).populate("products");
@@ -99,19 +99,36 @@ export const update = async (req, res) => {
 
 export const remove = async (req, res) => {
   try {
-    const data = await Size.findByIdAndDelete(req.params.id);
-    if (!data) {
+    const size = await Size.findById(req.params.id);
+    if (!size) {
+      return res.status(404).json({
+        message: "Size not found",
+      });
+    }
+
+    const hasProductDetails = await ProductDetail.exists({
+      sizes: req.params.id,
+    });
+    if (hasProductDetails) {
+      return res.status(400).json({
+        message: "Không thể xóa size có sản phẩm chi tiết",
+      });
+    }
+
+    const deletedSize = await Size.findByIdAndDelete(req.params.id);
+    if (!deletedSize) {
       return res.status(404).json({
         message: "Delete Size Not Successful",
       });
     }
+
     return res.status(200).json({
       message: "Delete Size Successful",
-      data: data,
+      data: deletedSize,
     });
   } catch (error) {
     return res.status(500).json({
-      name: error.name,
+      size: error.size,
       message: error.message,
     });
   }

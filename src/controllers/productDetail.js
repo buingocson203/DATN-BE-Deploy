@@ -45,67 +45,66 @@ export const create = async (req, res) => {
   }
 };
 
-
 export const getDetailProductDetail = async (req, res) => {
-  // try {
-  //   const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  //   // Kiểm tra xem id có phải là ObjectId hợp lệ không
-  //   if (!mongoose.Types.ObjectId.isValid(id)) {
-  //     return res.status(400).json({
-  //       message: "ID không hợp lệ",
-  //     });
-  //   }
+    // Kiểm tra xem id có phải là ObjectId hợp lệ không
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "ID không hợp lệ",
+      });
+    }
 
-  //   // Tìm chi tiết sản phẩm theo productId và lấy tất cả các size liên quan
-  //   const productDetails = await ProductDetail.find({ product: id })
-  //     .populate("product", "name") // Thay 'name' bằng các trường bạn muốn lấy từ Product
-  //     .populate("sizes", "size"); // Thay 'size' bằng các trường bạn muốn lấy từ Size
+    // Tìm chi tiết sản phẩm theo productId và lấy tất cả các size liên quan
+    const productDetails = await ProductDetail.find({ product: id })
+      .populate("product", "name") // Thay 'name' bằng các trường bạn muốn lấy từ Product
+      .populate("sizes", "size"); // Thay 'size' bằng các trường bạn muốn lấy từ Size
 
-  //   if (!productDetails || productDetails.length === 0) {
-  //     return res.status(404).json({
-  //       message: "Không tìm thấy chi tiết sản phẩm",
-  //     });
-  //   }
+    if (!productDetails || productDetails.length === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy chi tiết sản phẩm",
+      });
+    }
 
-  //   // Xử lý thông tin của mỗi chi tiết sản phẩm
-  //   const formattedProductDetails = productDetails.map((detail) => {
-  //     // Tạo một mảng các size với thông tin tương ứng
-  //     const sizes = Array.isArray(detail.sizes)
-  //       ? detail.sizes.map((size) => ({
-  //           _id: size._id,
-  //           size: size.size,
-  //           quantity: detail.quantity,
-  //           price: detail.price,
-  //           importPrice: detail.importPrice,
-  //           promotionalPrice: detail.promotionalPrice,
-  //         }))
-  //       : [];
+    // Xử lý thông tin của mỗi chi tiết sản phẩm
+    const formattedProductDetails = productDetails.reduce((acc, detail) => {
+      const productId = detail.product._id.toString();
+      const existingProduct = acc.find((item) => item.productId === productId);
 
-  //     return {
-  //       _id: detail._id,
-  //       quantity: detail.quantity,
-  //       price: detail.price,
-  //       importPrice: detail.importPrice,
-  //       promotionalPrice: detail.promotionalPrice,
-  //       product: detail.product,
-  //       sizes: sizes,
-  //     };
-  //   });
+      const sizeDetail = {
+        _id: detail.sizes._id,
+        size: detail.sizes.size,
+        quantity: detail.quantity,
+        price: detail.price,
+        importPrice: detail.importPrice,
+        promotionalPrice: detail.promotionalPrice,
+      };
 
-  //   return res.status(200).json({
-  //     message: "Chi tiết sản phẩm đã được tìm thấy",
-  //     data: formattedProductDetails,
-  //   });
-  // } catch (error) {
-  //   return res.status(500).json({
-  //     message: error.message,
-  //   });
-  // }
+      if (existingProduct) {
+        existingProduct.sizes.push(sizeDetail);
+      } else {
+        acc.push({
+          _id: detail._id,
+          productId: productId,
+          name: detail.product.name,
+          sizes: [sizeDetail],
+        });
+      }
+
+      return acc;
+    }, []);
+
+    return res.status(200).json({
+      message: "Chi tiết sản phẩm đã được tìm thấy",
+      data: formattedProductDetails,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
 };
-
-
-
 
 export const getAllProductDetail = async (req, res) => {
   try {
@@ -168,28 +167,29 @@ export const getAllProductDetail = async (req, res) => {
   }
 };
 
+
 export const deleteProductDetail = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { productId } = req.params;
 
-    // Kiểm tra xem id có phải là ObjectId hợp lệ không
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    // Kiểm tra xem productId có phải là ObjectId hợp lệ không
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res.status(400).json({
         message: "ID không hợp lệ",
       });
     }
 
-    // Tìm và xóa chi tiết sản phẩm theo ID
-    const productDetail = await ProductDetail.findByIdAndDelete(id);
+    // Tìm và xóa tất cả chi tiết sản phẩm theo productId
+    const result = await ProductDetail.deleteMany({ product: productId });
 
-    if (!productDetail) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({
         message: "Không tìm thấy chi tiết sản phẩm",
       });
     }
 
     return res.status(200).json({
-      message: "Chi tiết sản phẩm đã được xóa thành công",
+      message: "Toàn bộ chi tiết sản phẩm đã được xóa thành công",
     });
   } catch (error) {
     return res.status(500).json({
@@ -212,7 +212,7 @@ export const updateProductDetail = async (req, res) => {
     // Loop through each update and apply the changes
     const updatedProductDetails = [];
     for (const update of updates) {
-      const { id, quantity, price, importPrice, promotionalPrice } = update;
+      const { id, sizes } = update;
 
       // Check if the id is a valid ObjectId
       if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -221,20 +221,40 @@ export const updateProductDetail = async (req, res) => {
         });
       }
 
-      // Update the product detail
-      const updatedProductDetail = await ProductDetail.findByIdAndUpdate(
-        id,
-        { quantity, price, importPrice, promotionalPrice },
-        { new: true }
-      );
+      // Loop through each size update
+      for (const sizeUpdate of sizes) {
+        const { _id, quantity, price, importPrice, promotionalPrice } =
+          sizeUpdate;
 
-      if (!updatedProductDetail) {
-        return res.status(404).json({
-          message: `Không tìm thấy chi tiết sản phẩm: ${id}`,
+        // Check if the size ID is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(_id)) {
+          return res.status(400).json({
+            message: `ID size không hợp lệ: ${_id}`,
+          });
+        }
+
+        // Find the product detail by product and size IDs
+        const productDetail = await ProductDetail.findOne({
+          product: id,
+          sizes: _id,
         });
-      }
 
-      updatedProductDetails.push(updatedProductDetail);
+        if (!productDetail) {
+          return res.status(404).json({
+            message: `Không tìm thấy chi tiết sản phẩm: ${_id}`,
+          });
+        }
+
+        // Update the product detail
+        productDetail.quantity = quantity;
+        productDetail.price = price;
+        productDetail.importPrice = importPrice;
+        productDetail.promotionalPrice = promotionalPrice;
+
+        // Save the updated product detail
+        const updatedProductDetail = await productDetail.save();
+        updatedProductDetails.push(updatedProductDetail);
+      }
     }
 
     return res.status(200).json({

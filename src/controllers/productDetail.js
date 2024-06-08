@@ -2,31 +2,19 @@ import ProductDetail from "../models/ProductDetail.js";
 import { productDetailValid } from "../validation/productDetail.js";
 import mongoose from "mongoose";
 
+
 export const create = async (req, res) => {
   try {
     const { error } = productDetailValid.validate(req.body);
     if (error) {
       return res.status(400).json({
-        message:
-          error.details[0].message || "Vui lòng kiểm tra lại dữ liệu của bạn",
+        message: error.details[0].message || "Vui lòng kiểm tra lại dữ liệu của bạn",
       });
     }
 
     const productDetailsData = req.body.productDetails;
 
-    // Check for duplicate quantities in the database
-    const existingQuantities = await ProductDetail.find({
-      quantity: { $in: productDetailsData.map((detail) => detail.quantity) },
-    });
-
-    if (existingQuantities.length > 0) {
-      return res.status(400).json({
-        message: `Trùng lặp quantity: ${existingQuantities
-          .map((e) => e.quantity)
-          .join(", ")}`,
-      });
-    }
-
+    // Insert product details
     const productDetails = await ProductDetail.insertMany(productDetailsData);
     if (!productDetails || productDetails.length === 0) {
       return res.status(404).json({

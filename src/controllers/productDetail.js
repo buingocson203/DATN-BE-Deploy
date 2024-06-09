@@ -8,22 +8,37 @@ export const create = async (req, res) => {
     const { error } = productDetailValid.validate(req.body);
     if (error) {
       return res.status(400).json({
-        message: error.details[0].message || "Vui lòng kiểm tra lại dữ liệu của bạn",
+        message: error.details[0].message || 'Vui lòng kiểm tra lại dữ liệu của bạn',
       });
     }
 
     const productDetailsData = req.body.productDetails;
 
+    // Check if size already exists for the given product
+    const sizeExistsPromises = productDetailsData.map(detail =>
+      ProductDetail.findOne({ product: detail.product, sizes: detail.sizes })
+    );
+    const existingSizes = await Promise.all(sizeExistsPromises);
+
+    const duplicateSizes = existingSizes.filter(Boolean);
+    if (duplicateSizes.length > 0) {
+      return res.status(400).json({
+        message: `Size đã tồn tại cho sản phẩm: ${duplicateSizes
+          .map((detail) => detail.sizes)
+          .join(', ')}`,
+      });
+    }
+
     // Insert product details
     const productDetails = await ProductDetail.insertMany(productDetailsData);
     if (!productDetails || productDetails.length === 0) {
       return res.status(404).json({
-        message: "Tạo chi tiết sản phẩm không thành công",
+        message: 'Tạo chi tiết sản phẩm không thành công',
       });
     }
 
     return res.status(200).json({
-      message: "Tạo sản phẩm chi tiết thành công",
+      message: 'Tạo sản phẩm chi tiết thành công',
       data: productDetails,
     });
   } catch (error) {

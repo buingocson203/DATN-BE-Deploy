@@ -18,6 +18,11 @@ const categorySchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product"
         }
+    ], productDetails: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ProductDetail"
+        }
     ]
 },{
     versionKey: false, timestamps: true

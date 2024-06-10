@@ -6,6 +6,7 @@ import routerSize from "./size.js";
 import routerProductDetail from "./productDetail.js";
 import routerImage from "./image.js";
 import routerInfoProduct from "./infoProduct.js";
+import routerCart from "./cart.js";
 const router = express.Router();
 router.use("/product", routerProduct);
 router.use("/categories", routerCategories);
@@ -14,4 +15,5 @@ router.use("/size", routerSize);
 router.use("/productDetail", routerProductDetail)
 router.use("/image", routerImage);
 router.use("/infoProduct", routerInfoProduct);
+router.use("/cart", routerCart)
 export default router;

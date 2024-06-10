@@ -14,5 +14,9 @@ routerProductDetail.get("/", getAllProductDetail);
 routerProductDetail.get("/:id", getDetailProductDetail);
 routerProductDetail.post("/", checkPermission, create);
 routerProductDetail.put("/", checkPermission, updateProductDetail);
-routerProductDetail.delete("/:productId", checkPermission, deleteProductDetail);
+routerProductDetail.delete(
+  "/:productDetailId",
+  checkPermission,
+  deleteProductDetail
+);
 export default routerProductDetail;

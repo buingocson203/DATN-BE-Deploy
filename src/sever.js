@@ -3,7 +3,9 @@ import { connect } from 'mongoose';
 import dotenv from "dotenv"
 import router from './routes/index.js';
 import cors from "cors";
+// import bodyParser from "body-parser";
 const app = express()
+// app.use(bodyParser.json());
 dotenv.config()
 const PORT = process.env.PORT;
 const URI_DB = process.env.URI_DB;

@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
-
+const { ObjectId } = mongoose.Types;
 const imageSchema = new mongoose.Schema(
   {
     image: {
       type: String,
       required: true,
     },
-    product: {
+    productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
       required: true,

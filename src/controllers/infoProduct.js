@@ -3,6 +3,7 @@ import Product from "../models/Product.js";
 import ProductDetail from "../models/ProductDetail.js";
 import Category from "../models/Category.js";
 import Size from "../models/Size.js";
+import Image from "../models/Image.js"; // Import model Image
 
 const { ObjectId } = mongoose.Types;
 
@@ -94,6 +95,9 @@ export const getInfoProductDetails = async (req, res) => {
         return null;
       }
 
+      // Lấy thông tin ảnh của sản phẩm
+      const images = await Image.find({ productId: product._id }).lean();
+
       return {
         nameProduct: product.name,
         productId: product._id,
@@ -104,6 +108,10 @@ export const getInfoProductDetails = async (req, res) => {
         filteredByCategory: category || "All",
         filteredByMinPrice: minPrice || "None",
         filteredByMaxPrice: maxPrice || "None",
+        images: images.map((image) => ({
+          imageUrl: image.image,
+          type: image.type,
+        })),
         productDetails: productDetails.map((detail) => ({
           productDetailId: detail._id,
           quantity: detail.quantity,

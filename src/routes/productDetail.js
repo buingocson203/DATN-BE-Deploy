@@ -13,6 +13,10 @@ const routerProductDetail = express.Router();
 routerProductDetail.get("/", getAllProductDetail);
 routerProductDetail.get("/:id", getDetailProductDetail);
 routerProductDetail.post("/", checkPermission, create);
-routerProductDetail.put("/:id", checkPermission, updateProductDetail);
-routerProductDetail.delete("/:id", checkPermission, deleteProductDetail);
+routerProductDetail.put("/", checkPermission, updateProductDetail);
+routerProductDetail.delete(
+  "/:productDetailId",
+  checkPermission,
+  deleteProductDetail
+);
 export default routerProductDetail;

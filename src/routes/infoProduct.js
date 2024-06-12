@@ -4,5 +4,5 @@ import { getInfoProductDetails, getProductDetailsById, getRelatedProducts } from
 const routerInfoProduct = express.Router();
 routerInfoProduct.get("/", getInfoProductDetails);
 routerInfoProduct.get("/:productId", getProductDetailsById);
-routerInfoProduct.get("/related/:productId", getRelatedProducts);
+routerInfoProduct.get("/:productId/related", getRelatedProducts);
 export default routerInfoProduct;

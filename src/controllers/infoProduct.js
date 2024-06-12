@@ -7,6 +7,7 @@ import Image from "../models/Image.js"; // Import model Image
 
 const { ObjectId } = mongoose.Types;
 
+
 export const getInfoProductDetails = async (req, res) => {
   try {
     const { size, category, minPrice, maxPrice, sort, name } = req.query; // Lấy kích thước, danh mục, khoảng giá và tham số sắp xếp từ query params
@@ -33,7 +34,7 @@ export const getInfoProductDetails = async (req, res) => {
       productFilter.categoryId = new ObjectId(category);
     }
     if (name) {
-      productFilter.name = new RegExp(name, 'i'); // Tìm kiếm tên sản phẩm không phân biệt chữ hoa chữ thường
+      productFilter.name = new RegExp(name, "i"); // Tìm kiếm tên sản phẩm không phân biệt chữ hoa chữ thường
     }
 
     const products = await Product.find(productFilter)
@@ -41,6 +42,10 @@ export const getInfoProductDetails = async (req, res) => {
       .lean();
 
     const productDetailsPromises = products.map(async (product) => {
+      if (!product || !product.categoryId) {
+        return null;
+      }
+
       let productDetails;
 
       // Điều kiện lọc cho chi tiết sản phẩm
@@ -79,6 +84,7 @@ export const getInfoProductDetails = async (req, res) => {
               importPrice: 1,
               promotionalPrice: 1,
               "sizes.size": 1,
+              "sizes._id": 1,
             },
           },
         ]);
@@ -91,7 +97,7 @@ export const getInfoProductDetails = async (req, res) => {
           .lean();
       }
 
-      if (productDetails.length === 0) {
+      if (!productDetails || productDetails.length === 0) {
         return null;
       }
 
@@ -119,18 +125,24 @@ export const getInfoProductDetails = async (req, res) => {
           importPrice: detail.importPrice,
           promotionalPrice: detail.promotionalPrice,
           size: detail.sizes.size,
+          sizeId: detail.sizes._id,
         })),
       };
     });
 
-    const productDetails = await Promise.all(productDetailsPromises);
+    const productDetails = (await Promise.all(productDetailsPromises)).filter(
+      (detail) => detail !== null
+    );
 
     // Sắp xếp dữ liệu sản phẩm dựa trên sortOption
     if (sortOption.price) {
       productDetails.sort((a, b) => {
         if (!a || !a.productDetails || a.productDetails.length === 0) return -1;
         if (!b || !b.productDetails || b.productDetails.length === 0) return 1;
-        return sortOption.price * (a.productDetails[0].price - b.productDetails[0].price);
+        return (
+          sortOption.price *
+          (a.productDetails[0].price - b.productDetails[0].price)
+        );
       });
     } else if (sortOption.nameProduct) {
       productDetails.sort((a, b) => {
@@ -142,7 +154,130 @@ export const getInfoProductDetails = async (req, res) => {
 
     return res.status(200).json({
       message: "Lấy thông tin sản phẩm chi tiết thành công",
-      data: productDetails.filter((detail) => detail !== null),
+      data: productDetails,
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getProductDetailsById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId)
+      .populate("categoryId")
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const productDetails = await ProductDetail.find({ product: productId })
+      .populate("sizes")
+      .lean();
+
+    // Lấy thông tin ảnh của sản phẩm
+    const images = await Image.find({ productId: productId }).lean();
+
+    const productData = {
+      nameProduct: product.name,
+      productId: product._id,
+      categoryId: product.categoryId._id,
+      nameCategory: product.categoryId.name,
+      descript: product.description,
+      images: images.map((image) => ({
+        imageUrl: image.image,
+        type: image.type,
+      })),
+      productDetails: productDetails.map((detail) => ({
+        productDetailId: detail._id,
+        quantity: detail.quantity,
+        price: detail.price,
+        importPrice: detail.importPrice,
+        promotionalPrice: detail.promotionalPrice,
+        size: detail.sizes.size,
+        sizeId: detail.sizes._id
+      })),
+    };
+
+    return res.status(200).json({
+      message: "Lấy thông tin chi tiết sản phẩm thành công",
+      data: productData,
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+export const getRelatedProducts = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Tìm sản phẩm với productId được cung cấp
+    const product = await Product.findById(productId).lean();
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    console.log('Found product:', product);
+
+    // Lấy 5 sản phẩm thuộc cùng categoryId
+    const relatedProducts = await Product.find({ categoryId: product.categoryId })
+      .limit(5)
+      .lean();
+
+    console.log('Related products before filter:', relatedProducts);
+
+    // Loại bỏ sản phẩm có productId trùng
+    const filteredProducts = relatedProducts.filter(p => p._id.toString() !== productId);
+
+    console.log('Filtered products:', filteredProducts);
+
+    // Nếu số sản phẩm sau khi lọc nhỏ hơn 4, lấy thêm sản phẩm khác để đảm bảo có 4 sản phẩm
+    if (filteredProducts.length < 4) {
+      const additionalProducts = await Product.find({ categoryId: product.categoryId, _id: { $nin: relatedProducts.map(p => p._id) } })
+        .limit(4 - filteredProducts.length)
+        .lean();
+
+      console.log('Additional products:', additionalProducts);
+      filteredProducts.push(...additionalProducts);
+    }
+
+    // Lấy thông tin chi tiết của từng sản phẩm liên quan
+    const detailedFilteredProducts = await Promise.all(filteredProducts.map(async p => {
+      const productDetails = await ProductDetail.find({ product: p._id }).populate("sizes").lean();
+      const images = await Image.find({ productId: p._id }).lean();
+
+      return {
+        ...p,
+        productDetails: productDetails.map(detail => ({
+          productDetailId: detail._id,
+          quantity: detail.quantity,
+          price: detail.price,
+          importPrice: detail.importPrice,
+          promotionalPrice: detail.promotionalPrice,
+          size: detail.sizes.size,
+          sizeId: detail.sizes._id,
+        })),
+        images: images.map(image => ({
+          imageUrl: image.image,
+          type: image.type,
+        }))
+      };
+    }));
+
+    return res.status(200).json({
+      message: "Lấy các sản phẩm liên quan thành công",
+      data: detailedFilteredProducts,
     });
   } catch (error) {
     console.error("Error:", error.message);

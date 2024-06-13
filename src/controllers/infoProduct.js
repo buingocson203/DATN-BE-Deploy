@@ -79,6 +79,7 @@ export const getInfoProductDetails = async (req, res) => {
               importPrice: 1,
               promotionalPrice: 1,
               "sizes.size": 1,
+              "sizes._id": 1,
             },
           },
         ]);
@@ -119,6 +120,7 @@ export const getInfoProductDetails = async (req, res) => {
           importPrice: detail.importPrice,
           promotionalPrice: detail.promotionalPrice,
           size: detail.sizes.size,
+          sizeId: detail.sizes._id
         })),
       };
     });
@@ -188,6 +190,7 @@ export const getProductDetailsById = async (req, res) => {
         importPrice: detail.importPrice,
         promotionalPrice: detail.promotionalPrice,
         size: detail.sizes.size,
+        sizeId: detail.sizes._id
       })),
     };
 
@@ -202,6 +205,7 @@ export const getProductDetailsById = async (req, res) => {
     });
   }
 };
+
 
 
 export const getRelatedProducts = async (req, res) => {
@@ -231,9 +235,42 @@ export const getRelatedProducts = async (req, res) => {
       filteredProducts.push(...additionalProducts);
     }
 
+    // Lấy thông tin chi tiết cho các sản phẩm liên quan
+    const productDetailsPromises = filteredProducts.map(async (product) => {
+      const productDetails = await ProductDetail.find({ product: product._id })
+        .populate("sizes")
+        .lean();
+
+      if (!productDetails || productDetails.length === 0) {
+        return null;
+      }
+
+      // Lấy thông tin ảnh của sản phẩm
+      const images = await Image.find({ productId: product._id }).lean();
+
+      return {
+        ...product,
+        images: images.map((image) => ({
+          imageUrl: image.image,
+          type: image.type,
+        })),
+        productDetails: productDetails.map((detail) => ({
+          productDetailId: detail._id,
+          quantity: detail.quantity,
+          price: detail.price,
+          importPrice: detail.importPrice,
+          promotionalPrice: detail.promotionalPrice,
+          size: detail.sizes.size,
+          sizeId: detail.sizes._id, // Thêm sizeId vào kết quả
+        })),
+      };
+    });
+
+    const detailedRelatedProducts = (await Promise.all(productDetailsPromises)).filter(product => product !== null);
+
     return res.status(200).json({
       message: "Lấy các sản phẩm liên quan thành công",
-      data: filteredProducts,
+      data: detailedRelatedProducts,
     });
   } catch (error) {
     console.error("Error:", error.message);

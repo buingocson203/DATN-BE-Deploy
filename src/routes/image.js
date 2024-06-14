@@ -1,12 +1,12 @@
 import express from "express";
 
 import { checkPermission } from "../middlewares/checkPermission.js";
-import { createImageProduct } from "../controllers/image.js";
+import { createImageProduct, deleteImages, getAllImages, getAllImagesByProductId, updateImages } from "../controllers/image.js";
 
 const routerImage = express.Router();
-// routerProductDetail.get("/", getAllProductDetail);
-// routerProductDetail.get("/:id", getDetailProductDetail);
+routerImage.get("/:productId", checkPermission, getAllImagesByProductId);
+routerImage.get("/", checkPermission, getAllImages);
 routerImage.post("/", checkPermission, createImageProduct);
-// routerProductDetail.put("/:id", checkPermission, updateProductDetail);
-// routerProductDetail.delete("/:id", checkPermission, deleteProductDetail);
+routerImage.delete("/deleteImages", checkPermission, deleteImages);
+routerImage.put("/update", checkPermission, updateImages);
 export default routerImage;

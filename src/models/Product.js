@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema({
         ref: "Category",
         require: true,
     },
+    
     status: {
         type: String,
         required: true,
@@ -22,5 +23,4 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true, versionKey: false });
 
 productSchema.plugin(mongoosePaginate);
-
 export default mongoose.model('Product', productSchema);

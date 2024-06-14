@@ -18,9 +18,9 @@ const orderSchema = new mongoose.Schema(
     productDetails: [
       {
         productDetailId: { type: mongoose.Types.ObjectId, required: true },
-        color: {
-          type: String,
-        },
+        // color: {
+        //   type: String,
+        // },
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },

@@ -153,50 +153,50 @@ export const deleteImages = async (req, res) => {
 };
 
 
-// export const updateImages = async (req, res) => {
-//   try {
-//     const { images } = req.body;
+export const updateImages = async (req, res) => {
+  try {
+    const { images } = req.body;
 
-//     // Check if images is provided and is an array
-//     if (!Array.isArray(images) || images.length === 0) {
-//       return res.status(400).json({
-//         message: "images field must be a non-empty array",
-//       });
-//     }
+    // Check if images is provided and is an array
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({
+        message: "images field must be a non-empty array",
+      });
+    }
 
-//     const updateResults = [];
+    const updateResults = [];
 
-//     for (const img of images) {
-//       if (!img._id) {
-//         return res.status(400).json({
-//           message: "Each image must have an _id",
-//         });
-//       }
+    for (const img of images) {
+      if (!img._id || !img.image || !img.type) {
+        return res.status(400).json({
+          message: "Each image must have an _id, image, and type",
+        });
+      }
 
-//       // Update the image
-//       const updatedImage = await Image.findByIdAndUpdate(
-//         img._id,
-//         { type: img.type },
-//         { new: true, runValidators: true }
-//       );
+      // Update the image and type
+      const updatedImage = await Image.findByIdAndUpdate(
+        img._id,
+        { image: img.image, type: img.type },
+        { new: true, runValidators: true }
+      );
 
-//       if (!updatedImage) {
-//         return res.status(404).json({
-//           message: `Image with _id ${img._id} not found`,
-//         });
-//       }
+      if (!updatedImage) {
+        return res.status(404).json({
+          message: `Image with _id ${img._id} not found`,
+        });
+      }
 
-//       updateResults.push(updatedImage);
-//     }
+      updateResults.push(updatedImage);
+    }
 
-//     return res.status(200).json({
-//       message: `Đã cập nhật thành công ${updateResults.length} ảnh`,
-//       data: updateResults,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: 'Đã xảy ra lỗi khi cập nhật ảnh',
-//       error: error.message,
-//     });
-//   }
-// };
+    return res.status(200).json({
+      message: `Successfully updated ${updateResults.length} images`,
+      data: updateResults,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'An error occurred while updating images',
+      error: error.message,
+    });
+  }
+};

@@ -9,6 +9,7 @@ export const orderValid = Joi.object({
       productDetailId: Joi.string().required(),
       price: Joi.number().required(),
       image: Joi.string().required(),
+      color: Joi.string(),
       // color: Joi.string(),
       sizeId: Joi.string().required(),
       quantity: Joi.number().default(1),

@@ -4,11 +4,13 @@ export const orderValid = Joi.object({
   address: Joi.string().required(),
   phone: Joi.number().required(),
   user_id: Joi.string().required(),
-  products: Joi.array().items(
+  productDetails: Joi.array().items(
     Joi.object({
-      product_id: Joi.string().required(),
+      productDetailId: Joi.string().required(),
+      price: Joi.number().required(),
+      image: Joi.string().required(),
       color: Joi.string(),
-      size: Joi.string(),
+      sizeId: Joi.string().required(),
       quantity: Joi.number().default(1),
     })
   ),

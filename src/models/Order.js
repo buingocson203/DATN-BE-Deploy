@@ -15,15 +15,15 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    products: [
+    productDetails: [
       {
-        product_id: { type: mongoose.Types.ObjectId, required: true },
+        productDetailId: { type: mongoose.Types.ObjectId, required: true },
         color: {
           type: String,
         },
-        size: {
-          type: String,
-        },
+        price: { type: Number, required: true },
+        image: { type: String, required: true },
+        sizeId: { type: mongoose.Types.ObjectId, required: true },
         quantity: { type: Number, default: 1 },
         _id: false,
       },

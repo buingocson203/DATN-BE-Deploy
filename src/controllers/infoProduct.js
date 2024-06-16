@@ -239,12 +239,12 @@ export const getRelatedProducts = async (req, res) => {
 
     // Nếu số sản phẩm sau khi lọc nhỏ hơn 4, lấy thêm sản phẩm khác để đảm bảo có 4 sản phẩm
     if (filteredProducts.length < 4) {
-      const additionalProducts = await Product.find({
-        categoryId: product.categoryId,
-        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
+      const additionalProducts = await Product.find({ 
+        categoryId: product.categoryId, 
+        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) } 
       })
-        .limit(4 - filteredProducts.length)
-        .lean();
+      .limit(4 - filteredProducts.length)
+      .lean();
 
       console.log('Additional products from same category:', additionalProducts);
       filteredProducts.push(...additionalProducts);
@@ -252,12 +252,12 @@ export const getRelatedProducts = async (req, res) => {
 
     // Nếu số sản phẩm sau khi lọc vẫn nhỏ hơn 4, lấy thêm sản phẩm từ danh mục khác
     if (filteredProducts.length < 4) {
-      const moreProducts = await Product.find({
+      const moreProducts = await Product.find({ 
         categoryId: { $ne: product.categoryId },
         _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
       })
-        .limit(4 - filteredProducts.length)
-        .lean();
+      .limit(4 - filteredProducts.length)
+      .lean();
 
       console.log('Additional products from different categories:', moreProducts);
       filteredProducts.push(...moreProducts);

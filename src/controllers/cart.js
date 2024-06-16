@@ -102,6 +102,7 @@ export const getCart = async (req, res) => {
           acc[key] = {
             idCart: item._id,
             nameProduct: item.productDetail.product.name,
+            productId: item.productDetail.product.id,
             size: item.productDetail.sizes.size,
             sizeId: item.productDetail.sizes.id,
             price: item.productDetail.price,

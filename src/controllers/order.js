@@ -16,10 +16,10 @@ export const createOrder = async (req, res) => {
 
     const newOrder = new Order(body);
     for (const product of newOrder.productDetails) {
-      const { productDetailId } = product;
+      const { productId } = product;
 
       // Check if product exist
-      const productExist = await Product.findById(productDetailId);
+      const productExist = await Product.findById(productId);
       if (!productExist) {
         return res.status(404).json({
           message: "Product not found",

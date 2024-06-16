@@ -6,7 +6,7 @@ export const orderValid = Joi.object({
   user_id: Joi.string().required(),
   productDetails: Joi.array().items(
     Joi.object({
-      productDetailId: Joi.string().required(),
+      productId: Joi.string().required(),
       price: Joi.number().required(),
       image: Joi.string().required(),
       color: Joi.string(),

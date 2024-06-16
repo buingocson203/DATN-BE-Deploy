@@ -17,7 +17,7 @@ const orderSchema = new mongoose.Schema(
     },
     productDetails: [
       {
-        productDetailId: { type: mongoose.Types.ObjectId, required: true },
+        productId: { type: mongoose.Types.ObjectId, required: true },
         // color: {
         //   type: String,
         // },

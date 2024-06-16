@@ -8,9 +8,10 @@ import Image from "../models/Image.js"; // Import model Image
 const { ObjectId } = mongoose.Types;
 
 
+
 export const getInfoProductDetails = async (req, res) => {
   try {
-    const { size, category, minPrice, maxPrice, sort, name } = req.query; // Lấy kích thước, danh mục, khoảng giá và tham số sắp xếp từ query params
+    const { size, category, minPrice, maxPrice, sort, name } = req.query;
 
     console.log("Size query:", size);
     console.log("Category query:", category);
@@ -21,20 +22,19 @@ export const getInfoProductDetails = async (req, res) => {
 
     let sortOption = {};
     if (sort === "desc") {
-      sortOption = { price: -1 }; // Giảm dần (DESC)
+      sortOption = { price: -1 };
     } else if (sort === "asc") {
-      sortOption = { price: 1 }; // Tăng dần (ASC)
+      sortOption = { price: 1 };
     } else if (sort === "name") {
-      sortOption = { nameProduct: 1 }; // Sắp xếp tên từ A-Z
+      sortOption = { nameProduct: 1 };
     }
 
-    // Điều kiện lọc cho sản phẩm
     const productFilter = {};
     if (category) {
       productFilter.categoryId = new ObjectId(category);
     }
     if (name) {
-      productFilter.name = new RegExp(name, "i"); // Tìm kiếm tên sản phẩm không phân biệt chữ hoa chữ thường
+      productFilter.name = new RegExp(name, "i");
     }
 
     const products = await Product.find(productFilter)
@@ -48,7 +48,6 @@ export const getInfoProductDetails = async (req, res) => {
 
       let productDetails;
 
-      // Điều kiện lọc cho chi tiết sản phẩm
       const productDetailFilter = { product: product._id };
       if (minPrice || maxPrice) {
         productDetailFilter.price = {};
@@ -56,7 +55,6 @@ export const getInfoProductDetails = async (req, res) => {
         if (maxPrice) productDetailFilter.price.$lte = parseFloat(maxPrice);
       }
 
-      // Nếu có kích thước được chỉ định, thực hiện nối và lọc
       if (size) {
         productDetails = await ProductDetail.aggregate([
           {
@@ -74,7 +72,7 @@ export const getInfoProductDetails = async (req, res) => {
             $unwind: "$sizes",
           },
           {
-            $match: { "sizes.size": parseInt(size) }, // Chuyển đổi size thành số nếu nó là số
+            $match: { "sizes._id": new ObjectId(size) },
           },
           {
             $project: {
@@ -91,7 +89,6 @@ export const getInfoProductDetails = async (req, res) => {
 
         console.log("Product Details with Size Filter:", productDetails);
       } else {
-        // Nếu không có kích thước, lấy tất cả các chi tiết sản phẩm
         productDetails = await ProductDetail.find(productDetailFilter)
           .populate("sizes")
           .lean();
@@ -101,7 +98,6 @@ export const getInfoProductDetails = async (req, res) => {
         return null;
       }
 
-      // Lấy thông tin ảnh của sản phẩm
       const images = await Image.find({ productId: product._id }).lean();
 
       return {
@@ -134,7 +130,6 @@ export const getInfoProductDetails = async (req, res) => {
       (detail) => detail !== null
     );
 
-    // Sắp xếp dữ liệu sản phẩm dựa trên sortOption
     if (sortOption.price) {
       productDetails.sort((a, b) => {
         if (!a || !a.productDetails || a.productDetails.length === 0) return -1;
@@ -244,12 +239,12 @@ export const getRelatedProducts = async (req, res) => {
 
     // Nếu số sản phẩm sau khi lọc nhỏ hơn 4, lấy thêm sản phẩm khác để đảm bảo có 4 sản phẩm
     if (filteredProducts.length < 4) {
-      const additionalProducts = await Product.find({ 
-        categoryId: product.categoryId, 
-        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) } 
+      const additionalProducts = await Product.find({
+        categoryId: product.categoryId,
+        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
       })
-      .limit(4 - filteredProducts.length)
-      .lean();
+        .limit(4 - filteredProducts.length)
+        .lean();
 
       console.log('Additional products from same category:', additionalProducts);
       filteredProducts.push(...additionalProducts);
@@ -257,12 +252,12 @@ export const getRelatedProducts = async (req, res) => {
 
     // Nếu số sản phẩm sau khi lọc vẫn nhỏ hơn 4, lấy thêm sản phẩm từ danh mục khác
     if (filteredProducts.length < 4) {
-      const moreProducts = await Product.find({ 
+      const moreProducts = await Product.find({
         categoryId: { $ne: product.categoryId },
         _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
       })
-      .limit(4 - filteredProducts.length)
-      .lean();
+        .limit(4 - filteredProducts.length)
+        .lean();
 
       console.log('Additional products from different categories:', moreProducts);
       filteredProducts.push(...moreProducts);

@@ -18,9 +18,6 @@ const orderSchema = new mongoose.Schema(
     productDetails: [
       {
         productId: { type: mongoose.Types.ObjectId, required: true },
-        // color: {
-        //   type: String,
-        // },
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
@@ -33,9 +30,6 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "waiting", "delivering", "done", "cancel"],
       default: "pending",
     },
-    // sale_id: {
-    //   type: mongoose.Types.ObjectId,
-    // },
     reason: { type: String },
     total_price: {
       type: Number,
@@ -43,6 +37,7 @@ const orderSchema = new mongoose.Schema(
     },
     total_amount_paid: { type: Number, default: 0 },
     payment_type: { type: String, enum: ["cod", "vnpay"], default: "cod" },
+    codeOrders: { type: String}
   },
   {
     timestamps: true,

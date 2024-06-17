@@ -10,7 +10,6 @@ export const orderValid = Joi.object({
       price: Joi.number().required(),
       image: Joi.string().required(),
       color: Joi.string(),
-      // color: Joi.string(),
       sizeId: Joi.string().required(),
       quantity: Joi.number().default(1),
     })
@@ -21,4 +20,5 @@ export const orderValid = Joi.object({
   total_price: Joi.number().required(),
   total_amount_paid: Joi.number().default(0),
   payment_type: Joi.string().valid("cod", "vnpay").default("cod"),
+  codeOrders: Joi.string().allow(null, '').required()
 });

@@ -5,16 +5,7 @@ import mongoose from "mongoose";
 
 export const createImageProduct = async (req, res) => {
   try {
-    // Validate the request body
-    const { error } = imageValid.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        message: error.details[0].message || "Dữ liệu không hợp lệ",
-      });
-    }
-
-    // Validate that images field is an array
-    if (!Array.isArray(req.body.images) || req.body.images.length === 0) {
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         message: "Images field must be a non-empty array",
       });
@@ -23,17 +14,20 @@ export const createImageProduct = async (req, res) => {
     // Create an array to hold the new images
     const newImages = [];
 
-    // Loop through the images array and create each image
-    for (const image of req.body.images) {
+    // Loop through the uploaded files and create each image
+    for (const file of req.files) {
+      const { originalname, buffer, mimetype, size } = file;
+      const { productId, type } = req.body;
+
       // Check if productId is valid ObjectId
-      if (!mongoose.Types.ObjectId.isValid(image.productId)) {
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
         return res.status(400).json({
           message: "Invalid productId format",
         });
       }
 
       // Check if productId exists in the database
-      const existingProduct = await Product.findById(image.productId);
+      const existingProduct = await Product.findById(productId);
       if (!existingProduct) {
         return res.status(404).json({
           message: "ProductId not found",
@@ -41,9 +35,9 @@ export const createImageProduct = async (req, res) => {
       }
 
       const newImage = await Image.create({
-        image: image.image,
-        productId: image.productId,
-        type: image.type,
+        image: buffer.toString("base64"), // Lưu trữ ảnh dưới dạng base64
+        productId: productId,
+        type: type,
       });
       newImages.push(newImage);
     }

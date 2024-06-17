@@ -58,7 +58,10 @@ const checkoutVnpay = {
       const signed = hmac.update(signData).digest("hex");
       vnp_Params["vnp_SecureHash"] = signed;
       vnpUrl += "?" + querystring.stringify(vnp_Params, { encode: false });
-      res.send({ url: vnpUrl });
+      return res.status(200).json({
+        message: "Tạo URL thanh toán thành công",
+        data: vnpUrl,
+      });
     } catch (error) {
       return res.status(500, { message: "Error server" });
     }

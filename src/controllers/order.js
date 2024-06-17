@@ -2,9 +2,25 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { orderValid } from "../validation/order.js";
 
+// Hàm sinh chuỗi ngẫu nhiên
+function generateRandomCode(length) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 export const createOrder = async (req, res) => {
   try {
     const body = req.body;
+
+    // Kiểm tra và sinh codeOrders nếu payment_type là "cod"
+    if (body.payment_type === "cod") {
+      body.codeOrders = generateRandomCode(8);
+    }
 
     // Validate body order data
     const { error } = orderValid.validate(body, { abortEarly: false });

@@ -65,6 +65,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
+
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find().populate('user_id', 'name email'); // Populating user details for each order

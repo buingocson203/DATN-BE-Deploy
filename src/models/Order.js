@@ -21,6 +21,9 @@ const orderSchema = new mongoose.Schema(
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
+        sizeName: { type: String, required: true }, // Thêm trường sizeName
+        productDetailId: { type: mongoose.Types.ObjectId, required: true }, // Thêm trường productDetailId
+        productName: { type: String, required: true }, // Thêm trường productName
         quantity: { type: Number, default: 1 },
         _id: false,
       },
@@ -37,7 +40,7 @@ const orderSchema = new mongoose.Schema(
     },
     total_amount_paid: { type: Number, default: 0 },
     payment_type: { type: String, enum: ["cod", "vnpay"], default: "cod" },
-    codeOrders: { type: String}
+    codeOrders: { type: String }
   },
   {
     timestamps: true,

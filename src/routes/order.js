@@ -1,6 +1,7 @@
 import express from "express";
-import { createOrder, getAllOrders, getOrderDetail } from "../controllers/order.js";
+import { createOrder, getAllOrders,  getDetailOrderDone,  getDoneOrders, getOrderDetail } from "../controllers/order.js";
 import checkoutVnpay from "../controllers/vnpay.js";
+import { checkPermission } from "../middlewares/checkPermission.js";
 const orderRouter = express.Router();
 orderRouter.post("/create-order", createOrder);
 orderRouter.post("/create-order-vnpay", async (req, res) => {
@@ -18,7 +19,10 @@ orderRouter.post("/create-order-vnpay", async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   });
-orderRouter.get("/orders", getAllOrders);
-orderRouter.get("/orders/:orderId", getOrderDetail);
+orderRouter.get("/orders", checkPermission, getAllOrders);
+orderRouter.get("/orders/:orderId", checkPermission,  getOrderDetail);
+orderRouter.get("/done", checkPermission, getDoneOrders);
+orderRouter.get("/doneDetail/:productId", checkPermission, getDetailOrderDone);
+
 
 export default orderRouter;

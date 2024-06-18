@@ -20,11 +20,9 @@ orderRouter.post("/create-order-vnpay", async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   });
-
 orderRouter.post("/create-order", checkPermission, createOrder);
 orderRouter.get("/orders", checkPermission, getAllOrders);
 orderRouter.get("/orders/:orderId", checkPermission,  getOrderDetail);
 orderRouter.patch("/update-order/:orderId", checkPermission, updateOrder);
-
 
 export default orderRouter;

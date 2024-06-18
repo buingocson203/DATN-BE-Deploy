@@ -1,4 +1,3 @@
-
 import Order from "../models/Order.js";
 import ProductDetail from "../models/ProductDetail.js";
 import { orderValid } from "../validation/order.js";
@@ -99,95 +98,94 @@ export const getOrderDetail = async (req, res) => {
 
     const order = await Order.findById(orderId).populate("user_id", "userName email");
 
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    // Kiểm tra quyền của người dùng
-    if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
-      return res.status(403).json({
-        message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
-      });
-    }
-
-    return res.status(200).json({
-      message: "Fetch Order Detail Successful",
-      data: order,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
+    if (!order) {return res.status(404).json({
+      message: "Order not found",
     });
   }
+
+  // Kiểm tra quyền của người dùng
+  if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
+    return res.status(403).json({
+      message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
+    });
+  }
+
+  return res.status(200).json({
+    message: "Fetch Order Detail Successful",
+    data: order,
+  });
+} catch (error) {
+  return res.status(500).json({
+    message: error.message,
+  });
+}
 };
 
 
 export const updateOrder = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { orderStatus } = req.body;
-    const { user } = req; // Lấy thông tin người dùng từ req.user
+try {
+  const { orderId } = req.params;
+  const { orderStatus } = req.body;
+  const { user } = req; // Lấy thông tin người dùng từ req.user
 
-    const order = await Order.findById(orderId);
+  const order = await Order.findById(orderId);
 
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    // Define valid transitions
-    const validTransitions = {
-      pending: ["cancel"], // Chỉ user có thể chuyển từ pending sang cancel
-      waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
-      delivering: ["done"],
-      done: [],
-      cancel: [],
-    };
-
-    // Kiểm tra quyền của user và điều chỉnh validTransitions
-    if (user.role === "user" && order.orderStatus !== "pending") {
-      return res.status(403).json({
-        message: "Bạn không có quyền hủy đơn hàng này",
-      });
-    }
-
-    // Kiểm tra trạng thái hợp lệ
-    if (!validTransitions[order.orderStatus].includes(orderStatus)) {
-      return res.status(400).json({
-        message: `Invalid status transition from ${order.orderStatus} to ${orderStatus}`,
-      });
-    }
-
-    // Nếu trạng thái chuyển thành "done", giảm số lượng của từng sản phẩm trong đơn hàng
-    if (orderStatus === "done") {
-      for (const product of order.productDetails) {
-        const { productDetailId, quantityOrders } = product;
-        const productDetailRecord = await ProductDetail.findById(productDetailId);
-        if (productDetailRecord) {
-          productDetailRecord.quantity -= quantityOrders;
-          await productDetailRecord.save();
-        } else {
-          return res.status(404).json({
-            message: `ProductDetail with ID ${productDetailId} not found`,
-          });
-        }
-      }
-    }
-
-    order.orderStatus = orderStatus;
-    await order.save();
-
-    return res.status(200).json({
-      message: "Update Order Successful",
-      data: order,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
+  if (!order) {
+    return res.status(404).json({
+      message: "Order not found",
     });
   }
+
+  // Define valid transitions
+  const validTransitions = {
+    pending: ["cancel"], // Chỉ user có thể chuyển từ pending sang cancel
+    waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
+    delivering: ["done"],
+    done: [],
+    cancel: [],
+  };
+
+  // Kiểm tra quyền của user và điều chỉnh validTransitions
+  if (user.role === "user" && order.orderStatus !== "pending") {
+    return res.status(403).json({
+      message: "Bạn không có quyền hủy đơn hàng này",
+    });
+  }
+
+  // Kiểm tra trạng thái hợp lệ
+  if (!validTransitions[order.orderStatus].includes(orderStatus)) {
+    return res.status(400).json({
+      message: `Invalid status transition from ${order.orderStatus} to ${orderStatus}`,
+    });
+  }
+
+  // Nếu trạng thái chuyển thành "done", giảm số lượng của từng sản phẩm trong đơn hàng
+  if (orderStatus === "done") {
+    for (const product of order.productDetails) {
+      const { productDetailId, quantityOrders } = product;
+      const productDetailRecord = await ProductDetail.findById(productDetailId);
+      if (productDetailRecord) {
+        productDetailRecord.quantity -= quantityOrders;
+        await productDetailRecord.save();
+      } else {
+        return res.status(404).json({
+          message: `ProductDetail with ID ${productDetailId} not found`,
+        });
+      }
+    }
+  }
+
+  order.orderStatus = orderStatus;
+  await order.save();
+
+  return res.status(200).json({
+    message: "Update Order Successful",
+    data: order,
+  });
+} catch (error) {
+  return res.status(500).json({
+    message: error.message,
+  });
+}
 
 };

@@ -1,5 +1,5 @@
 import Order from "../models/Order.js";
-import ProductDetail from "../models/ProductDetail.js"; // Thay đổi từ Product sang ProductDetail
+import ProductDetail from "../models/ProductDetail.js";
 import { orderValid } from "../validation/order.js";
 
 // Hàm sinh chuỗi ngẫu nhiên
@@ -109,6 +109,7 @@ export const updateOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { orderStatus } = req.body;
+    const { user } = req; // Lấy thông tin người dùng từ req.user
 
     const order = await Order.findById(orderId);
 
@@ -120,13 +121,21 @@ export const updateOrder = async (req, res) => {
 
     // Define valid transitions
     const validTransitions = {
-      pending: ["waiting"],
-      waiting: ["delivering"],
-      delivering: ["done", "cancel"],
+      pending: ["cancel"], // Chỉ user có thể chuyển từ pending sang cancel
+      waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
+      delivering: ["done"],
       done: [],
       cancel: [],
     };
 
+    // Kiểm tra quyền của user và điều chỉnh validTransitions
+    if (user.role === "user" && order.orderStatus !== "pending") {
+      return res.status(403).json({
+        message: "Bạn không có quyền hủy đơn hàng này",
+      });
+    }
+
+    // Kiểm tra trạng thái hợp lệ
     if (!validTransitions[order.orderStatus].includes(orderStatus)) {
       return res.status(400).json({
         message: `Invalid status transition from ${order.orderStatus} to ${orderStatus}`,

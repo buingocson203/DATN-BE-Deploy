@@ -23,11 +23,7 @@ export const checkPermission = async (req, res, next) => {
         message: "Token lỗi",
       });
     }
-    if (user.role !== "admin") {
-      return res.status(403).json({
-        message: "Bạn không có quyền làm việc này",
-      });
-    }
+    
     // B4: Next
     req.user = user; // Lưu thông tin người dùng vào req để dùng trong controller
     next();

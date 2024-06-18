@@ -2,7 +2,6 @@
 import Order from "../models/Order.js";
 import ProductDetail from "../models/ProductDetail.js";
 import { orderValid } from "../validation/order.js";
-import ProductDetail from "../models/ProductDetail.js";
 import Size from "../models/Size.js";
 
 // Hàm sinh chuỗi ngẫu nhiên

@@ -1,11 +1,15 @@
+
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { orderValid } from "../validation/order.js";
+import ProductDetail from "../models/ProductDetail.js";
+import Size from "../models/Size.js";
 
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
   const charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -65,10 +69,19 @@ export const createOrder = async (req, res) => {
   }
 };
 
-
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate('user_id', 'name email'); // Populating user details for each order
+    const { user } = req;
+
+    let orders;
+    if (user.role === "admin") {
+      // Nếu người dùng là admin, hiển thị tất cả đơn hàng
+      orders = await Order.find().populate("user_id", "userName email").sort({ createdAt: -1 });
+    } else {
+      // Nếu người dùng là member, chỉ hiển thị đơn hàng của họ
+      orders = await Order.find({ user_id: user._id }).populate("user_id", "userName email").sort({ createdAt: -1 });
+    }
+
     return res.status(200).json({
       message: "Fetch All Orders Successful",
       data: orders,
@@ -83,11 +96,20 @@ export const getAllOrders = async (req, res) => {
 export const getOrderDetail = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const order = await Order.findById(orderId).populate('user_id', 'name email');
+    const { user } = req;
+
+    const order = await Order.findById(orderId).populate("user_id", "userName email");
 
     if (!order) {
       return res.status(404).json({
         message: "Order not found",
+      });
+    }
+
+    // Kiểm tra quyền của người dùng
+    if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
+      return res.status(403).json({
+        message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
       });
     }
 
@@ -143,3 +165,4 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+

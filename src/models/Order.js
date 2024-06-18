@@ -18,6 +18,7 @@ const orderSchema = new mongoose.Schema(
     productDetails: [
       {
         productId: { type: mongoose.Types.ObjectId, required: true },
+        productName: { type: String },
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
@@ -40,6 +41,7 @@ const orderSchema = new mongoose.Schema(
     },
     total_amount_paid: { type: Number, default: 0 },
     payment_type: { type: String, enum: ["cod", "vnpay"], default: "cod" },
+    codeOrders: { type: String },
     codeOrders: { type: String }
   },
   {

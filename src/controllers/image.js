@@ -5,7 +5,15 @@ import mongoose from "mongoose";
 
 export const createImageProduct = async (req, res) => {
   try {
-    if (!req.files || req.files.length === 0) {
+    // Validate the request body
+    const { error } = imageValid.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        message: error.details[0].message || "Dữ liệu không hợp lệ",
+      });
+    }
+    // Validate that images field is an array
+    if (!Array.isArray(req.body.images) || req.body.images.length === 0) {
       return res.status(400).json({
         message: "Images field must be a non-empty array",
       });
@@ -14,20 +22,17 @@ export const createImageProduct = async (req, res) => {
     // Create an array to hold the new images
     const newImages = [];
 
-    // Loop through the uploaded files and create each image
-    for (const file of req.files) {
-      const { originalname, buffer, mimetype, size } = file;
-      const { productId, type } = req.body;
-
+    // Loop through the images array and create each image
+    for (const image of req.body.images) {
       // Check if productId is valid ObjectId
-      if (!mongoose.Types.ObjectId.isValid(productId)) {
+      if (!mongoose.Types.ObjectId.isValid(image.productId)) {
         return res.status(400).json({
           message: "Invalid productId format",
         });
       }
 
       // Check if productId exists in the database
-      const existingProduct = await Product.findById(productId);
+      const existingProduct = await Product.findById(image.productId);
       if (!existingProduct) {
         return res.status(404).json({
           message: "ProductId not found",
@@ -35,9 +40,9 @@ export const createImageProduct = async (req, res) => {
       }
 
       const newImage = await Image.create({
-        image: buffer.toString("base64"), // Lưu trữ ảnh dưới dạng base64
-        productId: productId,
-        type: type,
+        image: image.image,
+        productId: image.productId,
+        type: image.type,
       });
       newImages.push(newImage);
     }
@@ -91,7 +96,7 @@ export const getAllImages = async (req, res) => {
 
     // Khởi tạo một đối tượng để nhóm các hình ảnh theo productId
     let groupedImages = {};
-// let allImagesProduct = image.productId
+    // let allImagesProduct = image.productId
     // Nhóm các hình ảnh vào các đối tượng tương ứng với productId
     allImages.forEach(image => {
       const allImagesProduct = image.productId

@@ -10,17 +10,17 @@ export const orderValid = Joi.object({
       price: Joi.number().required(),
       image: Joi.string().required(),
       sizeId: Joi.string().required(),
-      sizeName: Joi.string().required(), // Thêm trường sizeName
-      productDetailId: Joi.string().required(), // Thêm trường productDetailId
-      productName: Joi.string().required(), // Thêm trường productName
-      quantity: Joi.number().default(1),
+      sizeName: Joi.string().required(),
+      productDetailId: Joi.string().required(),
+      productName: Joi.string().required(),
+      quantityOrders: Joi.number().default(1), // Thay đổi từ quantity thành quantityOrders
     })
   ),
-  status: Joi.string()
+  orderStatus: Joi.string()
     .valid("pending", "waiting", "delivering", "done", "cancel")
     .default("pending"),
   total_price: Joi.number().required(),
   total_amount_paid: Joi.number().default(0),
-  payment_type: Joi.string().valid("cod", "vnpay").default("cod"),
+  paymentMethod: Joi.string().valid("cod", "vnpay").default("cod"),
   codeOrders: Joi.string().allow(null, '').required()
 });

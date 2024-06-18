@@ -21,14 +21,14 @@ const orderSchema = new mongoose.Schema(
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
-        sizeName: { type: String, required: true }, // Thêm trường sizeName
-        productDetailId: { type: mongoose.Types.ObjectId, required: true }, // Thêm trường productDetailId
-        productName: { type: String, required: true }, // Thêm trường productName
-        quantity: { type: Number, default: 1 },
+        sizeName: { type: String, required: true },
+        productDetailId: { type: mongoose.Types.ObjectId, required: true },
+        productName: { type: String, required: true },
+        quantityOrders: { type: Number, default: 1 }, // Thay đổi từ quantity thành quantityOrders
         _id: false,
       },
     ],
-    status: {
+    orderStatus: {
       type: String,
       enum: ["pending", "waiting", "delivering", "done", "cancel"],
       default: "pending",
@@ -39,7 +39,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     total_amount_paid: { type: Number, default: 0 },
-    payment_type: { type: String, enum: ["cod", "vnpay"], default: "cod" },
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "vnpay"],
+      default: "cod"
+    },
     codeOrders: { type: String }
   },
   {

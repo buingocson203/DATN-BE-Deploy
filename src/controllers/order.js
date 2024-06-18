@@ -1,5 +1,5 @@
 import Order from "../models/Order.js";
-import Product from "../models/Product.js";
+import ProductDetail from "../models/ProductDetail.js"; // Thay đổi từ Product sang ProductDetail
 import { orderValid } from "../validation/order.js";
 
 // Hàm sinh chuỗi ngẫu nhiên
@@ -17,14 +17,14 @@ export const createOrder = async (req, res) => {
   try {
     const body = req.body;
 
-    // Kiểm tra và sinh codeOrders nếu payment_type là "cod"
-    if (body.payment_type === "cod") {
+    // Kiểm tra và sinh codeOrders nếu paymentMethod là "cod"
+    if (body.paymentMethod === "cod") {
       body.codeOrders = generateRandomCode(8);
-    } else if (body.payment_type === "vnpay") {
+    } else if (body.paymentMethod === "vnpay") {
       // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
       if (!body.codeOrders) {
         return res.status(400).json({
-          message: "codeOrders is required for vnpay payment type",
+          message: "codeOrders is required for vnpay payment method",
         });
       }
     }
@@ -40,13 +40,13 @@ export const createOrder = async (req, res) => {
 
     const newOrder = new Order(body);
     for (const product of newOrder.productDetails) {
-      const { productId } = product;
+      const { productDetailId } = product;
 
       // Check if product exists
-      const productExist = await Product.findById(productId);
+      const productExist = await ProductDetail.findById(productDetailId);
       if (!productExist) {
         return res.status(404).json({
-          message: "Product not found",
+          message: "ProductDetail not found",
         });
       }
     }
@@ -64,6 +64,8 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
+
 
 
 export const getAllOrders = async (req, res) => {
@@ -102,10 +104,11 @@ export const getOrderDetail = async (req, res) => {
   }
 };
 
+
 export const updateOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { orderStatus } = req.body;
 
     const order = await Order.findById(orderId);
 
@@ -124,13 +127,29 @@ export const updateOrder = async (req, res) => {
       cancel: [],
     };
 
-    if (!validTransitions[order.status].includes(status)) {
+    if (!validTransitions[order.orderStatus].includes(orderStatus)) {
       return res.status(400).json({
-        message: `Invalid status transition from ${order.status} to ${status}`,
+        message: `Invalid status transition from ${order.orderStatus} to ${orderStatus}`,
       });
     }
 
-    order.status = status;
+    // Nếu trạng thái chuyển thành "done", giảm số lượng của từng sản phẩm trong đơn hàng
+    if (orderStatus === "done") {
+      for (const product of order.productDetails) {
+        const { productDetailId, quantityOrders } = product;
+        const productDetailRecord = await ProductDetail.findById(productDetailId);
+        if (productDetailRecord) {
+          productDetailRecord.quantity -= quantityOrders;
+          await productDetailRecord.save();
+        } else {
+          return res.status(404).json({
+            message: `ProductDetail with ID ${productDetailId} not found`,
+          });
+        }
+      }
+    }
+
+    order.orderStatus = orderStatus;
     await order.save();
 
     return res.status(200).json({

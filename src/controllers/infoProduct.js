@@ -10,7 +10,12 @@ const { ObjectId } = mongoose.Types;
 export const getInfoProductDetails = async (req, res) => {
   try {
     const { size, category, minPrice, maxPrice, sort, name } = req.query;
-    const { user } = req;
+    console.log("Size query:", size);
+    console.log("Category query:", category);
+    console.log("Min Price query:", minPrice);
+    console.log("Max Price query:", maxPrice);
+    console.log("Sort query:", sort);
+    console.log("Name query:", name);
 
     let sortOption = {};
     if (sort === "desc") {
@@ -22,12 +27,6 @@ export const getInfoProductDetails = async (req, res) => {
     }
 
     const productFilter = {};
-
-    // Thêm điều kiện lọc sản phẩm dựa trên vai trò người dùng
-    if (user.role !== "admin") {
-      productFilter.status = "hiện";
-    }
-
     if (category) {
       productFilter.categoryId = new ObjectId(category);
     }
@@ -84,6 +83,8 @@ export const getInfoProductDetails = async (req, res) => {
             },
           },
         ]);
+
+        console.log("Product Details with Size Filter:", productDetails);
       } else {
         productDetails = await ProductDetail.find(productDetailFilter)
           .populate("sizes")
@@ -155,6 +156,7 @@ export const getInfoProductDetails = async (req, res) => {
     });
   }
 };
+
 
 export const getProductDetailsById = async (req, res) => {
   try {

@@ -70,15 +70,24 @@ export const createOrder = async (req, res) => {
 export const getAllOrders = async (req, res) => {
   try {
     const { user } = req;
+    const { status } = req.query;
 
-    let orders;
-    if (user.role === "admin") {
-      // Nếu người dùng là admin, hiển thị tất cả đơn hàng
-      orders = await Order.find().populate("user_id", "userName email").sort({ createdAt: -1 });
-    } else {
+    let filter = {};
+
+    if (user.role !== "admin") {
       // Nếu người dùng là member, chỉ hiển thị đơn hàng của họ
-      orders = await Order.find({ user_id: user._id }).populate("user_id", "userName email").sort({ createdAt: -1 });
+      filter.user_id = user._id;
     }
+
+    // Nếu có trạng thái đơn hàng, thêm vào filter
+    if (status) {
+      filter.orderStatus = status;
+    }
+
+    // Lấy danh sách đơn hàng theo filter và sắp xếp theo thời gian tạo (mới nhất lên trên)
+    const orders = await Order.find(filter)
+      .populate("user_id", "userName email")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       message: "Fetch All Orders Successful",

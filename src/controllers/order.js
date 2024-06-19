@@ -1,7 +1,7 @@
 import Order from "../models/Order.js";
 import ProductDetail from "../models/ProductDetail.js";
+import Cart from "../models/Cart.js";
 import { orderValid } from "../validation/order.js";
-import Size from "../models/Size.js";
 
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
@@ -58,6 +58,13 @@ export const createOrder = async (req, res) => {
     // Save order to database
     const order = await newOrder.save();
 
+    // Xóa các mục trong giỏ hàng liên quan đến đơn hàng vừa được tạo thành công
+    const productDetailIds = newOrder.productDetails.map(product => product.productDetailId);
+    await Cart.deleteMany({
+      user: order.user_id,
+      productDetail: { $in: productDetailIds }
+    });
+
     return res.status(200).json({
       message: "Create Order Successful",
       data: order,
@@ -69,8 +76,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-
-
+// Các chức năng khác giữ nguyên
 export const getAllOrders = async (req, res) => {
   try {
     const { user } = req;
@@ -111,29 +117,29 @@ export const getOrderDetail = async (req, res) => {
 
     const order = await Order.findById(orderId).populate("user_id", "userName email");
 
-    if (!order) {return res.status(404).json({
-      message: "Order not found",
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    // Kiểm tra quyền của người dùng
+    if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
+      return res.status(403).json({
+        message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Fetch Order Detail Successful",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
     });
   }
-
-  // Kiểm tra quyền của người dùng
-  if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
-    return res.status(403).json({
-      message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
-    });
-  }
-
-  return res.status(200).json({
-    message: "Fetch Order Detail Successful",
-    data: order,
-  });
-} catch (error) {
-  return res.status(500).json({
-    message: error.message,
-  });
-}
 };
-
 
 export const updateOrder = async (req, res) => {
   try {
@@ -203,12 +209,8 @@ export const updateOrder = async (req, res) => {
       });
     }
   } catch (error) {
-      return res.status(500).json({
-        message: error.message,
-      });
-    }
-  };
-
-
-
-
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};

@@ -2,6 +2,7 @@ import Review from "../models/Review.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import ProductDetail from "../models/ProductDetail.js";
+import Image from "../models/Image.js";
 
 export const createReview = async (req, res) => {
   try {
@@ -80,7 +81,6 @@ export const getProductReviews = async (req, res) => {
   }
 };
 
-
 export const getReviewDetail = async (req, res) => {
   try {
     const { reviewId } = req.params;
@@ -108,6 +108,12 @@ export const getReviewDetail = async (req, res) => {
     const productDetail = await ProductDetail.findOne({
       product: review.productId,
     }).populate("sizes");
+
+    // Tìm hình ảnh có type là "thumbnail" của sản phẩm
+    const images = await Image.find({
+      productId: product._id,
+      type: "thumbnail",
+    });
 
     // Tạo đối tượng chứa thông tin chi tiết đánh giá và thông tin sản phẩm
     const reviewDetail = {
@@ -137,6 +143,11 @@ export const getReviewDetail = async (req, res) => {
               }
             : null,
         },
+        images: images.map((image) => ({
+          _id: image._id,
+          imageUrl: image.image,
+          type: image.type,
+        })),
       },
     };
 

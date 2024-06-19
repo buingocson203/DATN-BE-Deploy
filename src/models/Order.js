@@ -18,31 +18,38 @@ const orderSchema = new mongoose.Schema(
     productDetails: [
       {
         productId: { type: mongoose.Types.ObjectId, required: true },
-        // color: {
-        //   type: String,
-        // },
+        productName: { type: String, required: true },
         price: { type: Number, required: true },
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
-        quantity: { type: Number, default: 1 },
+        sizeName: { type: String, required: true },
+        productDetailId: { type: mongoose.Types.ObjectId, required: true },
+        quantityOrders: { type: Number, default: 1 },
         _id: false,
       },
     ],
-    status: {
+    orderStatus: {
       type: String,
       enum: ["pending", "waiting", "delivering", "done", "cancel"],
       default: "pending",
     },
-    // sale_id: {
-    //   type: mongoose.Types.ObjectId,
-    // },
     reason: { type: String },
     total_price: {
       type: Number,
       required: true,
     },
     total_amount_paid: { type: Number, default: 0 },
-    payment_type: { type: String, enum: ["cod", "vnpay"], default: "cod" },
+    paymentMethod: {
+      type: String,
+      enum: ["cod", "vnpay"],
+      default: "cod"
+    },
+    codeOrders: { type: String },
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "paid"],
+      default: "unpaid"
+    }
   },
   {
     timestamps: true,

@@ -9,16 +9,20 @@ export const orderValid = Joi.object({
       productId: Joi.string().required(),
       price: Joi.number().required(),
       image: Joi.string().required(),
-      color: Joi.string(),
-      // color: Joi.string(),
       sizeId: Joi.string().required(),
-      quantity: Joi.number().default(1),
+      sizeName: Joi.string().required(),
+      productDetailId: Joi.string().required(),
+      productName: Joi.string().required(),
+      quantityOrders: Joi.number().default(1),
     })
   ),
-  status: Joi.string()
+  orderStatus: Joi.string()
     .valid("pending", "waiting", "delivering", "done", "cancel")
     .default("pending"),
   total_price: Joi.number().required(),
   total_amount_paid: Joi.number().default(0),
-  payment_type: Joi.string().valid("cod", "vnpay").default("cod"),
+  paymentMethod: Joi.string().valid("cod", "vnpay").default("cod"),
+  codeOrders: Joi.string().allow(null, '').required(),
+  paymentStatus: Joi.string().valid("unpaid", "paid").default("unpaid")
 });
+

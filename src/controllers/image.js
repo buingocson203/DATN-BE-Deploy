@@ -12,7 +12,6 @@ export const createImageProduct = async (req, res) => {
         message: error.details[0].message || "Dữ liệu không hợp lệ",
       });
     }
-
     // Validate that images field is an array
     if (!Array.isArray(req.body.images) || req.body.images.length === 0) {
       return res.status(400).json({
@@ -97,7 +96,7 @@ export const getAllImages = async (req, res) => {
 
     // Khởi tạo một đối tượng để nhóm các hình ảnh theo productId
     let groupedImages = {};
-// let allImagesProduct = image.productId
+    // let allImagesProduct = image.productId
     // Nhóm các hình ảnh vào các đối tượng tương ứng với productId
     allImages.forEach(image => {
       const allImagesProduct = image.productId

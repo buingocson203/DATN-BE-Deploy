@@ -7,12 +7,9 @@ import Image from "../models/Image.js"; // Import model Image
 
 const { ObjectId } = mongoose.Types;
 
-
-
 export const getInfoProductDetails = async (req, res) => {
   try {
     const { size, category, minPrice, maxPrice, sort, name } = req.query;
-
     console.log("Size query:", size);
     console.log("Category query:", category);
     console.log("Min Price query:", minPrice);
@@ -103,6 +100,7 @@ export const getInfoProductDetails = async (req, res) => {
       return {
         nameProduct: product.name,
         productId: product._id,
+        status: product.status,
         categoryId: product.categoryId._id,
         nameCategory: product.categoryId.name,
         descript: product.description,
@@ -159,6 +157,7 @@ export const getInfoProductDetails = async (req, res) => {
   }
 };
 
+
 export const getProductDetailsById = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -195,7 +194,7 @@ export const getProductDetailsById = async (req, res) => {
         importPrice: detail.importPrice,
         promotionalPrice: detail.promotionalPrice,
         size: detail.sizes.size,
-        sizeId: detail.sizes._id
+        sizeId: detail.sizes._id,
       })),
     };
 
@@ -211,7 +210,6 @@ export const getProductDetailsById = async (req, res) => {
   }
 };
 
-
 export const getRelatedProducts = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -223,30 +221,37 @@ export const getRelatedProducts = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    console.log('Found product:', product);
+    console.log("Found product:", product);
 
     // Lấy 5 sản phẩm thuộc cùng categoryId
-    const relatedProducts = await Product.find({ categoryId: product.categoryId })
+    const relatedProducts = await Product.find({
+      categoryId: product.categoryId,
+    })
       .limit(5)
       .lean();
 
-    console.log('Related products before filter:', relatedProducts);
+    console.log("Related products before filter:", relatedProducts);
 
     // Loại bỏ sản phẩm có productId trùng
-    const filteredProducts = relatedProducts.filter(p => p._id.toString() !== productId);
+    const filteredProducts = relatedProducts.filter(
+      (p) => p._id.toString() !== productId
+    );
 
-    console.log('Filtered products:', filteredProducts);
+    console.log("Filtered products:", filteredProducts);
 
     // Nếu số sản phẩm sau khi lọc nhỏ hơn 4, lấy thêm sản phẩm khác để đảm bảo có 4 sản phẩm
     if (filteredProducts.length < 4) {
       const additionalProducts = await Product.find({
         categoryId: product.categoryId,
-        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
+        _id: { $nin: filteredProducts.map((p) => p._id).concat(productId) },
       })
         .limit(4 - filteredProducts.length)
         .lean();
 
-      console.log('Additional products from same category:', additionalProducts);
+      console.log(
+        "Additional products from same category:",
+        additionalProducts
+      );
       filteredProducts.push(...additionalProducts);
     }
 
@@ -254,37 +259,44 @@ export const getRelatedProducts = async (req, res) => {
     if (filteredProducts.length < 4) {
       const moreProducts = await Product.find({
         categoryId: { $ne: product.categoryId },
-        _id: { $nin: filteredProducts.map(p => p._id).concat(productId) }
+        _id: { $nin: filteredProducts.map((p) => p._id).concat(productId) },
       })
         .limit(4 - filteredProducts.length)
         .lean();
 
-      console.log('Additional products from different categories:', moreProducts);
+      console.log(
+        "Additional products from different categories:",
+        moreProducts
+      );
       filteredProducts.push(...moreProducts);
     }
 
     // Lấy thông tin chi tiết của từng sản phẩm liên quan
-    const detailedFilteredProducts = await Promise.all(filteredProducts.map(async p => {
-      const productDetails = await ProductDetail.find({ product: p._id }).populate("sizes").lean();
-      const images = await Image.find({ productId: p._id }).lean();
+    const detailedFilteredProducts = await Promise.all(
+      filteredProducts.map(async (p) => {
+        const productDetails = await ProductDetail.find({ product: p._id })
+          .populate("sizes")
+          .lean();
+        const images = await Image.find({ productId: p._id }).lean();
 
-      return {
-        ...p,
-        productDetails: productDetails.map(detail => ({
-          productDetailId: detail._id,
-          quantity: detail.quantity,
-          price: detail.price,
-          importPrice: detail.importPrice,
-          promotionalPrice: detail.promotionalPrice,
-          size: detail.sizes.size,
-          sizeId: detail.sizes._id,
-        })),
-        images: images.map(image => ({
-          imageUrl: image.image,
-          type: image.type,
-        }))
-      };
-    }));
+        return {
+          ...p,
+          productDetails: productDetails.map((detail) => ({
+            productDetailId: detail._id,
+            quantity: detail.quantity,
+            price: detail.price,
+            importPrice: detail.importPrice,
+            promotionalPrice: detail.promotionalPrice,
+            size: detail.sizes.size,
+            sizeId: detail.sizes._id,
+          })),
+          images: images.map((image) => ({
+            imageUrl: image.image,
+            type: image.type,
+          })),
+        };
+      })
+    );
 
     return res.status(200).json({
       message: "Lấy các sản phẩm liên quan thành công",
@@ -297,4 +309,3 @@ export const getRelatedProducts = async (req, res) => {
     });
   }
 };
-

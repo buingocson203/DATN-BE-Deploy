@@ -8,6 +8,9 @@ import routerImage from "./image.js";
 import orderRouter from "./order.js";
 import routerInfoProduct from "./infoProduct.js";
 import routerCart from "./cart.js";
+import ordeDetailRouter from "./oderDetail.js";
+import routerpurchasehistory from "./purchasehistory.js";
+import routerReview from "./review.js";
 
 const router = express.Router();
 router.use("/product", routerProduct);
@@ -19,5 +22,8 @@ router.use("/image", routerImage);
 router.use("/order", orderRouter);
 router.use("/infoProduct", routerInfoProduct);
 router.use("/cart", routerCart)
+router.use("/oderDetail", ordeDetailRouter);
+router.use("/purchaseHistory", routerpurchasehistory);
+router.use("/review", routerReview);
 
 export default router;

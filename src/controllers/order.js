@@ -149,11 +149,13 @@ export const updateOrder = async (req, res) => {
 
     const order = await Order.findById(orderId);
 
+
     if (!order) {
       return res.status(404).json({
         message: "Order not found",
       });
     }
+
 
     // Define valid transitions
     const validTransitions = {
@@ -209,8 +211,14 @@ export const updateOrder = async (req, res) => {
       });
     }
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
-  }
-};
+
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
+  };
+
+
+
+
+

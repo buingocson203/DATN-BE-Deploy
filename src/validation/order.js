@@ -25,3 +25,4 @@ export const orderValid = Joi.object({
   codeOrders: Joi.string().allow(null, '').required(),
   paymentStatus: Joi.string().valid("unpaid", "paid").default("unpaid")
 });
+

@@ -22,6 +22,7 @@ export const createOrder = async (req, res) => {
     // Kiểm tra và sinh codeOrders nếu paymentMethod là "cod"
     if (body.paymentMethod === "cod") {
       body.codeOrders = generateRandomCode(8);
+      body.paymentStatus = "unpaid";
     } else if (body.paymentMethod === "vnpay") {
       // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
       if (!body.codeOrders) {
@@ -29,6 +30,7 @@ export const createOrder = async (req, res) => {
           message: "codeOrders is required for vnpay payment method",
         });
       }
+      body.paymentStatus = "paid";
     }
 
     // Validate body order data
@@ -66,6 +68,8 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
+
 
 export const getAllOrders = async (req, res) => {
   try {
@@ -123,10 +127,10 @@ export const getOrderDetail = async (req, res) => {
 
 
 export const updateOrder = async (req, res) => {
-try {
-  const { orderId } = req.params;
-  const { orderStatus } = req.body;
-  const { user } = req; // Lấy thông tin người dùng từ req.user
+  try {
+    const { orderId } = req.params;
+    const { orderStatus, paymentStatus } = req.body;
+    const { user } = req; // Lấy thông tin người dùng từ req.user
 
   const order = await Order.findById(orderId);
 
@@ -172,20 +176,28 @@ try {
           message: `ProductDetail with ID ${productDetailId} not found`,
         });
       }
+      // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
+      if (order.paymentMethod === "cod") {
+        order.paymentStatus = "paid";
+      }
     }
+
+    order.orderStatus = orderStatus;
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus; // Cập nhật paymentStatus nếu có trong yêu cầu
+    }
+    await order.save();
+
+    return res.status(200).json({
+      message: "Update Order Successful",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
   }
-
-  order.orderStatus = orderStatus;
-  await order.save();
-
-  return res.status(200).json({
-    message: "Update Order Successful",
-    data: order,
-  });
-} catch (error) {
-  return res.status(500).json({
-    message: error.message,
-  });
-}
-
 };
+
+
+

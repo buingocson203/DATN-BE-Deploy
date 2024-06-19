@@ -13,7 +13,7 @@ export const orderValid = Joi.object({
       sizeName: Joi.string().required(),
       productDetailId: Joi.string().required(),
       productName: Joi.string().required(),
-      quantityOrders: Joi.number().default(1), // Thay đổi từ quantity thành quantityOrders
+      quantityOrders: Joi.number().default(1),
     })
   ),
   orderStatus: Joi.string()
@@ -22,5 +22,7 @@ export const orderValid = Joi.object({
   total_price: Joi.number().required(),
   total_amount_paid: Joi.number().default(0),
   paymentMethod: Joi.string().valid("cod", "vnpay").default("cod"),
-  codeOrders: Joi.string().allow(null, '').required()
+  codeOrders: Joi.string().allow(null, '').required(),
+  paymentStatus: Joi.string().valid("unpaid", "paid").default("unpaid")
 });
+

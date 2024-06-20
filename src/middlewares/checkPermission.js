@@ -7,15 +7,13 @@ const { SECRET_CODE } = process.env;
 
 export const checkPermission = async (req, res, next) => {
   try {
-    // B1: Kiểm tra người dùng đã đăng nhập hay chưa
     const token = req.headers.authorization?.split(" ")[1];
-    // B2: Kiểm tra token
     if (!token) {
       return res.status(403).json({
         message: "Bạn chưa đăng nhập",
       });
     }
-    // B3: Kiểm tra quyền của người dùng
+
     const decode = jwt.verify(token, SECRET_CODE);
     const user = await User.findById(decode._id);
     if (!user) {
@@ -23,9 +21,8 @@ export const checkPermission = async (req, res, next) => {
         message: "Token lỗi",
       });
     }
-    
-    // B4: Next
-    req.user = user; // Lưu thông tin người dùng vào req để dùng trong controller
+
+    req.user = user;
     next();
   } catch (error) {
     return res.json({

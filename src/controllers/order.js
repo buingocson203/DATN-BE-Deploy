@@ -15,6 +15,7 @@ function generateRandomCode(length) {
   return result;
 }
 
+
 export const createOrder = async (req, res) => {
   try {
     const body = req.body;
@@ -23,6 +24,7 @@ export const createOrder = async (req, res) => {
     if (body.paymentMethod === "cod") {
       body.codeOrders = generateRandomCode(8);
       body.paymentStatus = "unpaid";
+      body.orderStatus = "pending"; // Đơn hàng bắt đầu ở trạng thái pending
     } else if (body.paymentMethod === "vnpay") {
       // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
       if (!body.codeOrders) {
@@ -31,6 +33,7 @@ export const createOrder = async (req, res) => {
         });
       }
       body.paymentStatus = "paid";
+      body.orderStatus = "done"; // Đơn hàng được hoàn tất ngay lập tức
     }
 
     // Validate body order data
@@ -76,6 +79,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
+
 // Các chức năng khác giữ nguyên
 export const getAllOrders = async (req, res) => {
   try {
@@ -110,6 +114,7 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
+
 export const getOrderDetail = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -141,14 +146,14 @@ export const getOrderDetail = async (req, res) => {
   }
 };
 
+
 export const updateOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { orderStatus, paymentStatus } = req.body;
+    const { orderStatus } = req.body;
     const { user } = req; // Lấy thông tin người dùng từ req.user
 
     const order = await Order.findById(orderId);
-
 
     if (!order) {
       return res.status(404).json({
@@ -156,12 +161,11 @@ export const updateOrder = async (req, res) => {
       });
     }
 
-
     // Define valid transitions
     const validTransitions = {
-      pending: ["cancel"], // Chỉ user có thể chuyển từ pending sang cancel
-      waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
-      delivering: ["done"],
+      pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
+      waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang delivering hoặc cancel
+      delivering: ["done"], // Chỉ admin có thể chuyển từ delivering sang done
       done: [],
       cancel: [],
     };
@@ -169,7 +173,7 @@ export const updateOrder = async (req, res) => {
     // Kiểm tra quyền của user và điều chỉnh validTransitions
     if (user.role === "user" && order.orderStatus !== "pending") {
       return res.status(403).json({
-        message: "Bạn không có quyền hủy đơn hàng này",
+        message: "Bạn không có quyền thay đổi trạng thái đơn hàng này",
       });
     }
 
@@ -193,30 +197,27 @@ export const updateOrder = async (req, res) => {
             message: `ProductDetail with ID ${productDetailId} not found`,
           });
         }
-        // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
-        if (order.paymentMethod === "cod") {
-          order.paymentStatus = "paid";
-        }
       }
 
-      order.orderStatus = orderStatus;
-      if (paymentStatus) {
-        order.paymentStatus = paymentStatus; // Cập nhật paymentStatus nếu có trong yêu cầu
+      if (order.paymentMethod === "cod") {
+        order.paymentStatus = "paid"; // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
       }
-      await order.save();
-
-      return res.status(200).json({
-        message: "Update Order Successful",
-        data: order,
-      });
     }
+
+    order.orderStatus = orderStatus;
+    await order.save();
+
+    return res.status(200).json({
+      message: "Update Order Successful",
+      data: order,
+    });
   } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
-      return res.status(500).json({
-        message: error.message,
-      });
-    }
-  };
 
 
 

@@ -4,6 +4,7 @@ import Product from "../models/Product.js";
 import ProductDetail from "../models/ProductDetail.js";
 import Image from "../models/Image.js";
 
+
 export const createReview = async (req, res) => {
   try {
     const { userId, orderId, reviews } = req.body;
@@ -24,18 +25,32 @@ export const createReview = async (req, res) => {
       });
     }
 
-    const reviewPromises = order.productDetails.map((product, index) => {
+    const reviewPromises = order.productDetails.map(async (product, index) => {
       const { productId } = product;
       const { content } = reviews[index];
-      
+
+      // Kiểm tra xem người dùng đã đánh giá sản phẩm này hay chưa
+      const existingReview = await Review.findOne({ idAccount: userId, productId: productId });
+      if (existingReview) {
+        return res.status(400).json({
+          message: `You have already reviewed the product with ID ${productId}`,
+        });
+      }
+
       // Tạo đánh giá mới cho từng sản phẩm
       const review = new Review({
         idAccount: userId,
         productId: productId,
         content: content,
+        isRated: true,
       });
 
-      return review.save();
+      const savedReview = await review.save();
+
+      // Cập nhật trạng thái isRated của sản phẩm
+      await Product.findByIdAndUpdate(productId, { isRated: true });
+
+      return savedReview;
     });
 
     // Chờ tất cả các đánh giá được lưu vào database

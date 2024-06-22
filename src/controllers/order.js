@@ -2,7 +2,7 @@ import Order from "../models/Order.js";
 import ProductDetail from "../models/ProductDetail.js";
 import Cart from "../models/Cart.js";
 import { orderValid } from "../validation/order.js";
-
+import Review from "../models/Review.js";
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
   const characters =
@@ -91,6 +91,69 @@ export const createOrder = async (req, res) => {
 
 
 // Các chức năng khác giữ nguyên
+// export const getAllOrders = async (req, res) => {
+//   try {
+//     const { user } = req;
+//     const { status } = req.query;
+
+//     let filter = {};
+
+//     if (user.role !== "admin") {
+//       filter.user_id = user._id;
+//     }
+
+//     if (status) {
+//       filter.orderStatus = status;
+//     }
+
+//     // Fetch orders based on filter criteria
+//     const orders = await Order.find(filter)
+//       .populate("user_id", "userName email")
+//       .sort({ createdAt: -1 });
+
+//     // Iterate through each order
+//     const ordersWithReviews = await Promise.all(
+//       orders.map(async (order) => {
+//         // Iterate through each productDetail in the order
+//         const productDetailsWithReviews = await Promise.all(
+//           order.productDetails.map(async (productDetail) => {
+//             // Fetch reviews for the current productId
+//             const reviews = await Review.find({
+//               productId: productDetail.productId,
+//               idAccount: user._id, // Assuming you want reviews by the logged-in user
+//             });
+
+//             // Check if the user has reviewed this product
+//             const isRated = reviews.length > 0;
+
+//             // Add isRated field to productDetail
+//             return {
+//               ...productDetail.toObject(),
+//               isRated: isRated,
+//             };
+//           })
+//         );
+
+//         // Return the order with updated productDetails including isRated
+//         return {
+//           ...order.toObject(),
+//           productDetails: productDetailsWithReviews,
+//         };
+//       })
+//     );
+
+//     return res.status(200).json({
+//       message: "Fetch All Orders Successful",
+//       data: ordersWithReviews,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
+
 export const getAllOrders = async (req, res) => {
   try {
     const { user } = req;
@@ -99,23 +162,52 @@ export const getAllOrders = async (req, res) => {
     let filter = {};
 
     if (user.role !== "admin") {
-      // Nếu người dùng là member, chỉ hiển thị đơn hàng của họ
       filter.user_id = user._id;
     }
 
-    // Nếu có trạng thái đơn hàng, thêm vào filter
     if (status) {
       filter.orderStatus = status;
     }
 
-    // Lấy danh sách đơn hàng theo filter và sắp xếp theo thời gian tạo (mới nhất lên trên)
+    // Fetch orders based on filter criteria
     const orders = await Order.find(filter)
       .populate("user_id", "userName email")
       .sort({ createdAt: -1 });
 
+    // Iterate through each order
+    const ordersWithReviews = await Promise.all(
+      orders.map(async (order) => {
+        // Fetch reviews for all productDetails in the order
+        const productDetailIds = order.productDetails.map((pd) => pd.productId);
+
+        const reviews = await Review.find({
+          idAccount: user._id,
+          productId: { $in: productDetailIds },
+        });
+
+        // Create a map to store isRated status for each productId
+        const isRatedMap = {};
+        reviews.forEach((review) => {
+          isRatedMap[review.productId.toString()] = true;
+        });
+
+        // Add isRated field to order
+        const isRatedOrder = order.productDetails.some((pd) =>
+          isRatedMap.hasOwnProperty(pd.productId.toString())
+        );
+
+        const orderWithIsRated = {
+          ...order.toObject(),
+          isRated: isRatedOrder,
+        };
+
+        return orderWithIsRated;
+      })
+    );
+
     return res.status(200).json({
       message: "Fetch All Orders Successful",
-      data: orders,
+      data: ordersWithReviews,
     });
   } catch (error) {
     return res.status(500).json({
@@ -123,7 +215,6 @@ export const getAllOrders = async (req, res) => {
     });
   }
 };
-
 
 export const getOrderDetail = async (req, res) => {
   try {

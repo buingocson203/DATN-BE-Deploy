@@ -67,6 +67,9 @@ export const createOrder = async (req, res) => {
       user: order.user_id,
       productDetail: { $in: productDetailIds }
     });
+    if (body.paymentMethod === "vnpay") {
+      return order;
+    }
 
     return res.status(200).json({
       message: "Create Order Successful",

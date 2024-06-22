@@ -31,7 +31,7 @@ const checkoutVnpay = {
         req.connection.remoteAddress ||
         req.socket.remoteAddress ||
         req.connection.socket.remoteAddress;
-      const amount = req.body.total;
+      const amount = req.body.total_price;
       let vnp_Params = {};
       vnp_Params["vnp_Version"] = "2.1.0";
       vnp_Params["vnp_Command"] = "pay";

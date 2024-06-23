@@ -15,7 +15,6 @@ function generateRandomCode(length) {
   return result;
 }
 
-
 export const createOrder = async (req, res) => {
   try {
     const body = req.body;
@@ -46,8 +45,11 @@ export const createOrder = async (req, res) => {
     }
 
     const newOrder = new Order(body);
+
+    // Tính tổng giá tiền
+    let totalPrice = 0;
     for (const product of newOrder.productDetails) {
-      const { productDetailId } = product;
+      const { productDetailId, promotionalPrice, quantityOrders } = product;
 
       // Check if product exists
       const productExist = await ProductDetail.findById(productDetailId);
@@ -56,7 +58,10 @@ export const createOrder = async (req, res) => {
           message: "ProductDetail not found",
         });
       }
+
+      totalPrice += promotionalPrice * quantityOrders;
     }
+    newOrder.total_price = totalPrice;
 
     // Save order to database
     const order = await newOrder.save();
@@ -81,6 +86,8 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
+
 
 
 // Các chức năng khác giữ nguyên

@@ -95,7 +95,6 @@ export const signIn = async (req, res) => {
 };
 
 
-
 export const updateUser = async (req, res) => {
   try {
     // Validate user input
@@ -140,7 +139,6 @@ export const updateUser = async (req, res) => {
     });
   }
 };
-
 
 export const updateUserAdmin = async (req, res) => {
   try {
@@ -188,7 +186,6 @@ export const updateUserAdmin = async (req, res) => {
   }
 };
 
-
 export const blockUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -209,6 +206,84 @@ export const blockUser = async (req, res) => {
       message: "Người dùng đã bị block thành công",
       user: user,
     });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};
+
+export const getAllAccount = async (req, res) => {
+  try {
+    // Lấy thông tin người dùng từ middleware checkPermission
+    const currentUser = req.user;
+
+    // Kiểm tra nếu người dùng không phải là admin
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Bạn không có quyền truy cập danh sách tài khoản',
+      });
+    }
+
+    // Lấy danh sách người dùng từ cơ sở dữ liệu, loại bỏ trường password
+    const users = await User.find({}, { password: 0 });
+
+    return res.status(200).json({
+      message: 'Lấy danh sách tài khoản thành công',
+      users: users,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};
+
+
+export const getDetailAccount = async (req, res) => {
+  try {
+    // Lấy token từ header Authorization
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(403).json({
+        message: "Bạn chưa đăng nhập",
+      });
+    }
+
+    // Giải mã token để lấy thông tin user
+    const decoded = jwt.verify(token, SECRET_CODE);
+    const userId = decoded._id;
+
+    // Kiểm tra xem user có tồn tại trong cơ sở dữ liệu không
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Nếu là admin hoặc đang xem chi tiết của chính mình
+    if (req.user.role === 'admin' || userId === req.params.userId) {
+      // Lấy thông tin chi tiết của user từ id
+      const detailUser = await User.findById(req.params.userId).select('-password');
+      
+      if (!detailUser) {
+        return res.status(404).json({
+          message: "Không tìm thấy thông tin người dùng",
+        });
+      }
+
+      return res.status(200).json({
+        message: "Lấy thông tin người dùng thành công",
+        user: detailUser,
+      });
+    } else {
+      return res.status(403).json({
+        message: "Bạn không có quyền xem thông tin người dùng",
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       name: error.name,

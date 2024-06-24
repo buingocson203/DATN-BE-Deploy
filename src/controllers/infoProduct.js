@@ -7,15 +7,18 @@ import Image from "../models/Image.js"; // Import model Image
 
 const { ObjectId } = mongoose.Types;
 
+
 export const getInfoProductDetails = async (req, res) => {
   try {
-    const { size, category, minPrice, maxPrice, sort, name } = req.query;
+    const { size, category, minPrice, maxPrice, sort, name, page = 1, limit = 10 } = req.query;
     console.log("Size query:", size);
     console.log("Category query:", category);
     console.log("Min Price query:", minPrice);
     console.log("Max Price query:", maxPrice);
     console.log("Sort query:", sort);
     console.log("Name query:", name);
+    console.log("Page query:", page);
+    console.log("Limit query:", limit);
 
     let sortOption = {};
     if (sort === "desc") {
@@ -34,9 +37,13 @@ export const getInfoProductDetails = async (req, res) => {
       productFilter.name = new RegExp(name, "i");
     }
 
+    const skip = (page - 1) * limit;
+
     const products = await Product.find(productFilter)
       .populate("categoryId")
-      .lean();
+      .lean()
+      .skip(skip)
+      .limit(parseInt(limit, 10));
 
     const productDetailsPromises = products.map(async (product) => {
       if (!product || !product.categoryId) {
@@ -145,9 +152,16 @@ export const getInfoProductDetails = async (req, res) => {
       });
     }
 
+    // Tính tổng số sản phẩm
+    const totalProducts = await Product.countDocuments(productFilter);
+
     return res.status(200).json({
       message: "Lấy thông tin sản phẩm chi tiết thành công",
       data: productDetails,
+      total: totalProducts,
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+      totalPages: Math.ceil(totalProducts / limit),
     });
   } catch (error) {
     console.error("Error:", error.message);

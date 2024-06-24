@@ -94,7 +94,6 @@ export const signIn = async (req, res) => {
   }
 };
 
-
 export const updateUser = async (req, res) => {
   try {
     // Validate user input
@@ -188,6 +187,11 @@ export const updateUserAdmin = async (req, res) => {
 
 export const blockUser = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền khóa người dùng",
+      });
+    }
     const { userId } = req.params;
     
     // Find the user by userId
@@ -284,6 +288,40 @@ export const getDetailAccount = async (req, res) => {
         message: "Bạn không có quyền xem thông tin người dùng",
       });
     }
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};
+
+export const unlockUser = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền mở khóa người dùng",
+      });
+    }
+
+    const { userId } = req.params;
+
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Update the block status
+    user.block = false;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Người dùng đã được mở khóa thành công",
+      user: user,
+    });
   } catch (error) {
     return res.status(500).json({
       name: error.name,

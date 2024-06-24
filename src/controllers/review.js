@@ -80,10 +80,9 @@ export const getProductReviews = async (req, res) => {
     }
 
     // Lấy toàn bộ đánh giá của sản phẩm
-    const reviews = await Review.find({ productId }).populate(
-      "idAccount",
-      "userName email"
-    );
+     const reviews = await Review.find({ productId })
+      .populate("idAccount", "userName email")
+      .populate("productId", "name");
 
     return res.status(200).json({
       message: "Fetch Product Reviews Successful",
@@ -169,6 +168,68 @@ export const getReviewDetail = async (req, res) => {
     return res.status(200).json({
       message: "Fetch Review Detail Successful",
       data: reviewDetail,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+export const getAllReview = async (req, res) => {
+  try {
+    // Lấy thông tin người dùng từ req (được set trong middleware checkPermission)
+    const currentUser = req.user;
+
+    // Kiểm tra nếu người dùng không phải là admin
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Bạn không có quyền truy cập vào đánh giá',
+      });
+    }
+
+    // Lấy toàn bộ đánh giá và populate thông tin người dùng và sản phẩm
+    const reviews = await Review.find({})
+      .populate("idAccount", "userName email")
+      .populate({
+        path: "productId",
+        select: "name",
+      })
+      .sort({ createdAt: -1 }); // Sắp xếp đánh giá theo thời gian tạo mới nhất lên đầu
+
+    // Xử lý và cấu trúc lại dữ liệu trả về để bao gồm thông tin ảnh sản phẩm
+    const formattedReviews = await Promise.all(
+      reviews.map(async (review) => {
+        try {
+          const product = await Product.findById(review.productId);
+          if (!product) {
+            return null; // hoặc xử lý theo ý đồ của bạn khi không tìm thấy sản phẩm
+          }
+    
+          const productImages = await Image.find({
+            productId: review.productId,
+            type: "thumbnail"
+          }).select("image");
+    
+          return {
+            ...review._doc,
+            productId: {
+              ...product._doc,
+              images: productImages
+            }
+          };
+        } catch (error) {
+          console.error("Error while processing review:", error);
+          return null; // hoặc xử lý theo ý đồ của bạn khi có lỗi xảy ra
+        }
+      })
+    );
+
+    return res.status(200).json({
+      message: "Fetch All Reviews Successful",
+      data: formattedReviews,
     });
   } catch (error) {
     return res.status(500).json({

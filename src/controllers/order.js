@@ -37,7 +37,7 @@ export const createOrder = async (req, res) => {
       // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
       // nếu là vnpay thì get id vnpay từ data res vnpay lúc thanh toán xong : vnp_BankTranNo
       body.paymentStatus = "paid";
-      body.orderStatus = "done"; // Đơn hàng được hoàn tất ngay lập tức
+      body.orderStatus = "pending"; // Đơn hàng được hoàn tất ngay lập tức
     }
 
     const newOrder = new Order(body);

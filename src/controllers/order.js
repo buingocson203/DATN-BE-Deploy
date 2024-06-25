@@ -3,6 +3,7 @@ import ProductDetail from "../models/ProductDetail.js";
 import Cart from "../models/Cart.js";
 import { orderValid } from "../validation/order.js";
 import Review from "../models/Review.js";
+import mongoose from "mongoose";
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
   const characters =
@@ -214,7 +215,7 @@ export const getOrderDetail = async (req, res) => {
 
     const order = await Order.findById(orderId).populate(
       "user_id",
-      "userName email"
+      "userName email fullName"
     );
 
     if (!order) {
@@ -309,6 +310,55 @@ export const updateOrder = async (req, res) => {
     return res.status(200).json({
       message: "Update Order Successful",
       data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getOrderStatusHistory = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { user } = req;
+
+    // Kiểm tra quyền của người dùng, chỉ admin mới được xem lịch sử
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền truy cập lịch sử trạng thái đơn hàng này",
+      });
+    }
+
+    // Tìm kiếm đơn hàng dựa trên orderId
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Đơn hàng không tồn tại",
+      });
+    }
+
+    // Lấy lịch sử thay đổi trạng thái từ lịch sử sửa đổi của đơn hàng
+    const statusHistory = await Order.aggregate([
+      { $match: { _id: mongoose.Types.ObjectId(orderId) } },
+      { $unwind: "$history" },
+      { $sort: { "history.updatedAt": -1 } }, // Sắp xếp theo thời gian sửa đổi giảm dần
+      {
+        $project: {
+          _id: "$history._id",
+          orderId: "$_id",
+          previousStatus: "$history.previousStatus",
+          newStatus: "$history.newStatus",
+          updatedBy: "$history.updatedBy",
+          updatedAt: "$history.updatedAt",
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      message: "Lấy lịch sử thay đổi trạng thái đơn hàng thành công",
+      data: statusHistory,
     });
   } catch (error) {
     return res.status(500).json({

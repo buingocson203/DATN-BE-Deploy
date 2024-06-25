@@ -19,22 +19,6 @@ export const createOrder = async (req, res) => {
   try {
     const body = req.body;
 
-    // Kiểm tra và sinh codeOrders nếu paymentMethod là "cod"
-    if (body.paymentMethod === "cod") {
-      body.codeOrders = generateRandomCode(8);
-      body.paymentStatus = "unpaid";
-      body.orderStatus = "pending"; // Đơn hàng bắt đầu ở trạng thái pending
-    } else if (body.paymentMethod === "vnpay") {
-      // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
-      if (!body.codeOrders) {
-        return res.status(400).json({
-          message: "codeOrders is required for vnpay payment method",
-        });
-      }
-      body.paymentStatus = "paid";
-      body.orderStatus = "done"; // Đơn hàng được hoàn tất ngay lập tức
-    }
-
     // Validate body order data
     const { error } = orderValid.validate(body, { abortEarly: false });
     if (error) {
@@ -42,6 +26,18 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({
         message: errors,
       });
+    }
+
+    // Kiểm tra và sinh codeOrders nếu paymentMethod là "cod"
+    if (body.paymentMethod === "cod") {
+      body.codeOrders = generateRandomCode(8);
+      body.paymentStatus = "unpaid";
+      body.orderStatus = "pending"; // Đơn hàng bắt đầu ở trạng thái pending
+    } else if (body.paymentMethod === "vnpay") {
+      // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
+      // nếu là vnpay thì get id vnpay từ data res vnpay lúc thanh toán xong : vnp_BankTranNo
+      body.paymentStatus = "paid";
+      body.orderStatus = "done"; // Đơn hàng được hoàn tất ngay lập tức
     }
 
     const newOrder = new Order(body);
@@ -67,14 +63,13 @@ export const createOrder = async (req, res) => {
     const order = await newOrder.save();
 
     // Xóa các mục trong giỏ hàng liên quan đến đơn hàng vừa được tạo thành công
-    const productDetailIds = newOrder.productDetails.map(product => product.productDetailId);
+    const productDetailIds = newOrder.productDetails.map(
+      (product) => product.productDetailId
+    );
     await Cart.deleteMany({
       user: order.user_id,
-      productDetail: { $in: productDetailIds }
+      productDetail: { $in: productDetailIds },
     });
-    if (body.paymentMethod === "vnpay") {
-      return order;
-    }
 
     return res.status(200).json({
       message: "Create Order Successful",
@@ -86,9 +81,6 @@ export const createOrder = async (req, res) => {
     });
   }
 };
-
-
-
 
 // Các chức năng khác giữ nguyên
 // export const getAllOrders = async (req, res) => {
@@ -152,7 +144,6 @@ export const createOrder = async (req, res) => {
 //     });
 //   }
 // };
-
 
 export const getAllOrders = async (req, res) => {
   try {
@@ -221,7 +212,10 @@ export const getOrderDetail = async (req, res) => {
     const { orderId } = req.params;
     const { user } = req;
 
-    const order = await Order.findById(orderId).populate("user_id", "userName email");
+    const order = await Order.findById(orderId).populate(
+      "user_id",
+      "userName email"
+    );
 
     if (!order) {
       return res.status(404).json({
@@ -230,7 +224,10 @@ export const getOrderDetail = async (req, res) => {
     }
 
     // Kiểm tra quyền của người dùng
-    if (user.role !== "admin" && order.user_id._id.toString() !== user._id.toString()) {
+    if (
+      user.role !== "admin" &&
+      order.user_id._id.toString() !== user._id.toString()
+    ) {
       return res.status(403).json({
         message: "Bạn không có quyền truy cập chi tiết đơn hàng này",
       });
@@ -246,7 +243,6 @@ export const getOrderDetail = async (req, res) => {
     });
   }
 };
-
 
 export const updateOrder = async (req, res) => {
   try {
@@ -289,7 +285,9 @@ export const updateOrder = async (req, res) => {
     if (orderStatus === "done") {
       for (const product of order.productDetails) {
         const { productDetailId, quantityOrders } = product;
-        const productDetailRecord = await ProductDetail.findById(productDetailId);
+        const productDetailRecord = await ProductDetail.findById(
+          productDetailId
+        );
         if (productDetailRecord) {
           productDetailRecord.quantity -= quantityOrders;
           await productDetailRecord.save();
@@ -318,9 +316,3 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-

@@ -3,6 +3,7 @@ import { connect } from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import router from './routes/index.js'; // Import main router
+import bodyParser from 'body-parser';
 
 dotenv.config();
 const app = express();

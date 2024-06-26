@@ -43,14 +43,21 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: ["cod", "vnpay"],
-      default: "cod"
+      default: "cod",
     },
     codeOrders: { type: String },
     paymentStatus: {
       type: String,
       enum: ["unpaid", "paid"],
-      default: "unpaid"
-    }
+      default: "unpaid",
+    },
+    statusHistory: [
+      {
+        adminId: { type: mongoose.Types.ObjectId, ref: "User" },
+        status: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

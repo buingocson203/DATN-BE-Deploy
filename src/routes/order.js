@@ -3,6 +3,7 @@ import express from "express";
 import {
   createOrder,
   getAllOrders,
+  getHistoryStatusOrder,
   getOrderDetail,
   updateOrder,
 } from "../controllers/order.js";
@@ -21,5 +22,9 @@ orderRouter.post("/create-order", checkPermission, createOrder);
 orderRouter.get("/orders", checkPermission, getAllOrders);
 orderRouter.get("/orders/:orderId", checkPermission, getOrderDetail);
 orderRouter.patch("/update-order/:orderId", checkPermission, updateOrder);
-
+orderRouter.get(
+  "/order-history/:orderId",
+  checkPermission,
+  getHistoryStatusOrder
+);
 export default orderRouter;

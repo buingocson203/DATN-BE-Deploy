@@ -305,6 +305,10 @@ export const updateOrder = async (req, res) => {
     }
 
     order.orderStatus = orderStatus;
+    order.statusHistory.push({
+      adminId: user._id,
+      status: orderStatus,
+    });
     await order.save();
 
     return res.status(200).json({
@@ -318,47 +322,66 @@ export const updateOrder = async (req, res) => {
   }
 };
 
-export const getOrderStatusHistory = async (req, res) => {
+// export const getHistoryStatusOrder = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+
+//     const order = await Order.findById(orderId)
+//       .populate("statusHistory.adminId", "fullName")
+//       .populate("user_id", "fullName"); // assuming 'fullName' is the field you want to display for user
+
+//     if (!order) {
+//       return res.status(404).json({
+//         message: "Order not found",
+//       });
+//     }
+
+//     const statusHistory = order.statusHistory.map((history) => ({
+//       adminId: history.adminId._id,
+//       adminName: history.adminId.fullName,
+//       status: history.status,
+//       timestamp: history.timestamp,
+//       userFullName: order.user_id.fullName, // Adding user's full name to each statusHistory item
+//     }));
+
+//     return res.status(200).json({
+//       message: "Status history retrieved successfully",
+//       orderId: order._id,
+//       statusHistory: statusHistory,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
+export const getHistoryStatusOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { user } = req;
 
-    // Kiểm tra quyền của người dùng, chỉ admin mới được xem lịch sử
-    if (user.role !== "admin") {
-      return res.status(403).json({
-        message: "Bạn không có quyền truy cập lịch sử trạng thái đơn hàng này",
-      });
-    }
-
-    // Tìm kiếm đơn hàng dựa trên orderId
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+      .populate("statusHistory.adminId", "fullName")
+      .populate("user_id", "fullName"); // assuming 'fullName' is the field you want to display for user
 
     if (!order) {
       return res.status(404).json({
-        message: "Đơn hàng không tồn tại",
+        message: "Order not found",
       });
     }
 
-    // Lấy lịch sử thay đổi trạng thái từ lịch sử sửa đổi của đơn hàng
-    const statusHistory = await Order.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(orderId) } },
-      { $unwind: "$history" },
-      { $sort: { "history.updatedAt": -1 } }, // Sắp xếp theo thời gian sửa đổi giảm dần
-      {
-        $project: {
-          _id: "$history._id",
-          orderId: "$_id",
-          previousStatus: "$history.previousStatus",
-          newStatus: "$history.newStatus",
-          updatedBy: "$history.updatedBy",
-          updatedAt: "$history.updatedAt",
-        },
-      },
-    ]);
+    const statusHistory = order.statusHistory.map((history) => ({
+      adminId: history.adminId?._id,
+      adminName: history.adminId?.fullName || "Unknown", // Default to "Unknown" if adminId or fullName is missing
+      status: history.status,
+      timestamp: history.timestamp,
+      
+    }));
 
     return res.status(200).json({
-      message: "Lấy lịch sử thay đổi trạng thái đơn hàng thành công",
-      data: statusHistory,
+      message: "Status history retrieved successfully",
+      orderId: order._id,
+      statusHistory: statusHistory,
     });
   } catch (error) {
     return res.status(500).json({

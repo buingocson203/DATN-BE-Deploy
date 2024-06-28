@@ -1,6 +1,7 @@
 import Joi from "joi";
 
 export const orderValid = Joi.object({
+  name: Joi.string().required(),
   address: Joi.string().required(),
   phone: Joi.number().required(),
   user_id: Joi.string().required(),
@@ -8,7 +9,7 @@ export const orderValid = Joi.object({
     Joi.object({
       productId: Joi.string().required(),
       price: Joi.number().required(),
-      promotionalPrice: Joi.number().required(), // Thêm trường promotionalPrice
+      promotionalPrice: Joi.number().required(),
       image: Joi.string().required(),
       sizeId: Joi.string().required(),
       sizeName: Joi.string().required(),

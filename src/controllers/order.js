@@ -83,6 +83,69 @@ export const createOrder = async (req, res) => {
   }
 };
 
+// Các chức năng khác giữ nguyên
+// export const getAllOrders = async (req, res) => {
+//   try {
+//     const { user } = req;
+//     const { status } = req.query;
+
+//     let filter = {};
+
+//     if (user.role !== "admin") {
+//       filter.user_id = user._id;
+//     }
+
+//     if (status) {
+//       filter.orderStatus = status;
+//     }
+
+//     // Fetch orders based on filter criteria
+//     const orders = await Order.find(filter)
+//       .populate("user_id", "userName email")
+//       .sort({ createdAt: -1 });
+
+//     // Iterate through each order
+//     const ordersWithReviews = await Promise.all(
+//       orders.map(async (order) => {
+//         // Iterate through each productDetail in the order
+//         const productDetailsWithReviews = await Promise.all(
+//           order.productDetails.map(async (productDetail) => {
+//             // Fetch reviews for the current productId
+//             const reviews = await Review.find({
+//               productId: productDetail.productId,
+//               idAccount: user._id, // Assuming you want reviews by the logged-in user
+//             });
+
+//             // Check if the user has reviewed this product
+//             const isRated = reviews.length > 0;
+
+//             // Add isRated field to productDetail
+//             return {
+//               ...productDetail.toObject(),
+//               isRated: isRated,
+//             };
+//           })
+//         );
+
+//         // Return the order with updated productDetails including isRated
+//         return {
+//           ...order.toObject(),
+//           productDetails: productDetailsWithReviews,
+//         };
+//       })
+//     );
+
+//     return res.status(200).json({
+//       message: "Fetch All Orders Successful",
+//       data: ordersWithReviews,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
 export const getAllOrders = async (req, res) => {
   try {
     const { user } = req;
@@ -171,35 +234,9 @@ export const getOrderDetail = async (req, res) => {
       });
     }
 
-    // Lấy danh sách productDetails của đơn hàng
-    const productDetailIds = order.productDetails.map((pd) => pd.productId);
-
-    // Lấy tất cả các đánh giá mà người dùng đã thực hiện cho các productDetails đó
-    const reviews = await Review.find({
-      idAccount: user._id,
-      productId: { $in: productDetailIds },
-    });
-
-    // Tạo một map để lưu trữ trạng thái isRated cho từng productId
-    const isRatedMap = {};
-    reviews.forEach((review) => {
-      isRatedMap[review.productId.toString()] = true;
-    });
-
-    // Thêm trường isRated vào từng productDetail trong đơn hàng
-    const productDetailsWithIsRated = order.productDetails.map((pd) => ({
-      ...pd.toObject(),
-      isRated: isRatedMap.hasOwnProperty(pd.productId.toString()),
-    }));
-
-    const orderWithIsRated = {
-      ...order.toObject(),
-      productDetails: productDetailsWithIsRated,
-    };
-
     return res.status(200).json({
       message: "Fetch Order Detail Successful",
-      data: orderWithIsRated,
+      data: order,
     });
   } catch (error) {
     return res.status(500).json({
@@ -285,6 +322,39 @@ export const updateOrder = async (req, res) => {
   }
 };
 
+// export const getHistoryStatusOrder = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+
+//     const order = await Order.findById(orderId)
+//       .populate("statusHistory.adminId", "fullName")
+//       .populate("user_id", "fullName"); // assuming 'fullName' is the field you want to display for user
+
+//     if (!order) {
+//       return res.status(404).json({
+//         message: "Order not found",
+//       });
+//     }
+
+//     const statusHistory = order.statusHistory.map((history) => ({
+//       adminId: history.adminId._id,
+//       adminName: history.adminId.fullName,
+//       status: history.status,
+//       timestamp: history.timestamp,
+//       userFullName: order.user_id.fullName, // Adding user's full name to each statusHistory item
+//     }));
+
+//     return res.status(200).json({
+//       message: "Status history retrieved successfully",
+//       orderId: order._id,
+//       statusHistory: statusHistory,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
 
 export const getHistoryStatusOrder = async (req, res) => {
   try {

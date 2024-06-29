@@ -20,7 +20,7 @@ export const createOrder = async (req, res) => {
   try {
     const body = req.body;
 
-    // Validate body order data
+    // Validate dữ liệu order
     const { error } = orderValid.validate(body, { abortEarly: false });
     if (error) {
       const errors = error.details.map((err) => err.message);
@@ -29,38 +29,47 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Kiểm tra và sinh codeOrders nếu paymentMethod là "cod"
+    // Kiểm tra và sinh codeOrders nếu phương thức thanh toán là "cod"
     if (body.paymentMethod === "cod") {
       body.codeOrders = generateRandomCode(8);
       body.paymentStatus = "unpaid";
       body.orderStatus = "pending"; // Đơn hàng bắt đầu ở trạng thái pending
     } else if (body.paymentMethod === "vnpay") {
-      // Kiểm tra và lấy giá trị codeOrders từ yêu cầu POST
-      // nếu là vnpay thì get id vnpay từ data res vnpay lúc thanh toán xong : vnp_BankTranNo
       body.paymentStatus = "paid";
       body.orderStatus = "pending"; // Đơn hàng được hoàn tất ngay lập tức
     }
 
     const newOrder = new Order(body);
 
-    // Tính tổng giá tiền
+    // Tính tổng giá tiền và kiểm tra số lượng sản phẩm
     let totalPrice = 0;
     for (const product of newOrder.productDetails) {
       const { productDetailId, promotionalPrice, quantityOrders } = product;
 
-      // Check if product exists
+      // Kiểm tra sản phẩm có tồn tại không
       const productExist = await ProductDetail.findById(productDetailId);
       if (!productExist) {
         return res.status(404).json({
-          message: "ProductDetail not found",
+          message: "Không tìm thấy ProductDetail",
+        });
+      }
+
+      // Kiểm tra số lượng sản phẩm có đủ không
+      if (productExist.quantity < quantityOrders) {
+        return res.status(400).json({
+          message: `Sản phẩm với ID ${productDetailId} không đủ số lượng`,
         });
       }
 
       totalPrice += promotionalPrice * quantityOrders;
+
+      // Trừ số lượng sản phẩm
+      productExist.quantity -= quantityOrders;
+      await productExist.save();
     }
     newOrder.total_price = totalPrice;
 
-    // Save order to database
+    // Lưu đơn hàng vào cơ sở dữ liệu
     const order = await newOrder.save();
 
     // Xóa các mục trong giỏ hàng liên quan đến đơn hàng vừa được tạo thành công
@@ -73,7 +82,7 @@ export const createOrder = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Create Order Successful",
+      message: "Tạo đơn hàng thành công",
       data: order,
     });
   } catch (error) {
@@ -82,6 +91,7 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
 
 // Các chức năng khác giữ nguyên
 // export const getAllOrders = async (req, res) => {

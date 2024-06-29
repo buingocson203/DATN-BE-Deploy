@@ -58,7 +58,7 @@ const checkoutVnpay = {
       vnp_Params["vnp_OrderInfo"] = "Thanh_toan_don_hang";
       vnp_Params[
         "vnp_ReturnUrl"
-      ] = `http://localhost:5173/payment?userId=${user_id}&expire=${moment(
+      ] = `http://localhost:5173/checkout?userId=${user_id}&expire=${moment(
         new Date()
       )
         .add(15, "minute")

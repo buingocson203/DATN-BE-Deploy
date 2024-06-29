@@ -234,9 +234,33 @@ export const getOrderDetail = async (req, res) => {
       });
     }
 
+    // Fetch reviews for all productDetails in the order
+    const productDetailIds = order.productDetails.map((pd) => pd.productId);
+
+    const reviews = await Review.find({
+      idAccount: user._id,
+      productId: { $in: productDetailIds },
+    });
+
+    // Create a map to store isRated status for each productId
+    const isRatedMap = {};
+    reviews.forEach((review) => {
+      isRatedMap[review.productId.toString()] = true;
+    });
+
+    // Add isRated field to order
+    const isRatedOrder = order.productDetails.some((pd) =>
+      isRatedMap.hasOwnProperty(pd.productId.toString())
+    );
+
+    const orderWithIsRated = {
+      ...order.toObject(),
+      isRated: isRatedOrder,
+    };
+
     return res.status(200).json({
       message: "Fetch Order Detail Successful",
-      data: order,
+      data: orderWithIsRated,
     });
   } catch (error) {
     return res.status(500).json({

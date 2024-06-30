@@ -63,9 +63,7 @@ export const createOrder = async (req, res) => {
 
       totalPrice += promotionalPrice * quantityOrders;
 
-      // Trừ số lượng sản phẩm
-      productExist.quantity -= quantityOrders;
-      await productExist.save();
+      // Không trừ số lượng sản phẩm tại đây
     }
     newOrder.total_price = totalPrice;
 
@@ -91,6 +89,7 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -334,9 +333,7 @@ export const updateOrder = async (req, res) => {
         }
       }
 
-      if (order.paymentMethod === "cod") {
-        order.paymentStatus = "paid"; // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
-      }
+      order.paymentStatus = "paid"; // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
     }
 
     order.orderStatus = orderStatus;
@@ -356,6 +353,7 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+
 
 // export const getHistoryStatusOrder = async (req, res) => {
 //   try {

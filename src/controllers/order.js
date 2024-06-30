@@ -258,19 +258,20 @@ export const getOrderDetail = async (req, res) => {
       isRatedMap[review.productId.toString()] = true;
     });
 
-    // Add isRated field to order
-    const isRatedOrder = order.productDetails.some((pd) =>
-      isRatedMap.hasOwnProperty(pd.productId.toString())
-    );
+    // Add isRated field to each productDetail
+    const productDetailsWithIsRated = order.productDetails.map((pd) => ({
+      ...pd.toObject(),
+      isRated: !!isRatedMap[pd.productId.toString()],
+    }));
 
-    const orderWithIsRated = {
+    const orderWithIsRatedProductDetails = {
       ...order.toObject(),
-      isRated: isRatedOrder,
+      productDetails: productDetailsWithIsRated,
     };
 
     return res.status(200).json({
       message: "Fetch Order Detail Successful",
-      data: orderWithIsRated,
+      data: orderWithIsRatedProductDetails,
     });
   } catch (error) {
     return res.status(500).json({

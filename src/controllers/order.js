@@ -181,7 +181,7 @@ export const getOrderDetail = async (req, res) => {
 
     return res.status(200).json({
       message: "Fetch Order Detail Successful",
-      data: orderWithIsRatedProductDetails,
+      data: orderWithIsRated,
     });
   } catch (error) {
     return res.status(500).json({

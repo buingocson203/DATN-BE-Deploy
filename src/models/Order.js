@@ -19,6 +19,10 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isRated: {
+      type: Boolean,
+      default: false, // Mặc định là false khi tạo đơn hàng
+    },
     productDetails: [
       {
         productId: { type: mongoose.Types.ObjectId, required: true },

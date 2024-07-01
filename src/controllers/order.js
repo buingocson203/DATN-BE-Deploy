@@ -176,40 +176,19 @@ export const getAllOrders = async (req, res) => {
       .populate("user_id", "userName email")
       .sort({ createdAt: -1 });
 
-    // Iterate through each order
-    const ordersWithReviews = await Promise.all(
-      orders.map(async (order) => {
-        // Fetch reviews for all productDetails in the order
-        const productDetailIds = order.productDetails.map((pd) => pd.productId);
+    // Add isRated field to each order based on the isRated status of the order
+    const ordersWithIsRated = orders.map((order) => {
+      const isRatedOrder = order.isRated;
 
-        const reviews = await Review.find({
-          idAccount: user._id,
-          productId: { $in: productDetailIds },
-        });
-
-        // Create a map to store isRated status for each productId
-        const isRatedMap = {};
-        reviews.forEach((review) => {
-          isRatedMap[review.productId.toString()] = true;
-        });
-
-        // Add isRated field to order
-        const isRatedOrder = order.productDetails.some((pd) =>
-          isRatedMap.hasOwnProperty(pd.productId.toString())
-        );
-
-        const orderWithIsRated = {
-          ...order.toObject(),
-          isRated: isRatedOrder,
-        };
-
-        return orderWithIsRated;
-      })
-    );
+      return {
+        ...order.toObject(),
+        isRated: isRatedOrder,
+      };
+    });
 
     return res.status(200).json({
       message: "Fetch All Orders Successful",
-      data: ordersWithReviews,
+      data: ordersWithIsRated,
     });
   } catch (error) {
     return res.status(500).json({
@@ -223,10 +202,9 @@ export const getOrderDetail = async (req, res) => {
     const { orderId } = req.params;
     const { user } = req;
 
-    const order = await Order.findById(orderId).populate(
-      "user_id",
-      "userName email fullName"
-    );
+    // Lấy thông tin đơn hàng
+    const order = await Order.findById(orderId)
+      .populate("user_id", "userName email fullName");
 
     if (!order) {
       return res.status(404).json({
@@ -244,34 +222,15 @@ export const getOrderDetail = async (req, res) => {
       });
     }
 
-    // Fetch reviews for all productDetails in the order
-    const productDetailIds = order.productDetails.map((pd) => pd.productId);
-
-    const reviews = await Review.find({
-      idAccount: user._id,
-      productId: { $in: productDetailIds },
-    });
-
-    // Create a map to store isRated status for each productId
-    const isRatedMap = {};
-    reviews.forEach((review) => {
-      isRatedMap[review.productId.toString()] = true;
-    });
-
-    // Add isRated field to each productDetail
-    const productDetailsWithIsRated = order.productDetails.map((pd) => ({
-      ...pd.toObject(),
-      isRated: !!isRatedMap[pd.productId.toString()],
-    }));
-
-    const orderWithIsRatedProductDetails = {
+    // Thêm trường isRated cho đơn hàng
+    const orderWithIsRated = {
       ...order.toObject(),
-      productDetails: productDetailsWithIsRated,
+      isRated: order.isRated,
     };
 
     return res.status(200).json({
       message: "Fetch Order Detail Successful",
-      data: orderWithIsRatedProductDetails,
+      data: orderWithIsRated,
     });
   } catch (error) {
     return res.status(500).json({

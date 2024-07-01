@@ -10,11 +10,18 @@ export const createReview = async (req, res) => {
     const { userId, orderId, reviews } = req.body;
 
     // Lấy thông tin đơn hàng
-    const order = await Order.findOne({ _id: orderId, user_id: userId, orderStatus: "done" });
+    const order = await Order.findOne({ _id: orderId, user_id: userId });
 
     if (!order) {
       return res.status(400).json({
-        message: "Order not found or not completed.",
+        message: "Order not found.",
+      });
+    }
+
+    // Kiểm tra trạng thái đánh giá của đơn hàng
+    if (order.isRated) {
+      return res.status(400).json({
+        message: "Order has already been reviewed.",
       });
     }
 
@@ -28,14 +35,6 @@ export const createReview = async (req, res) => {
     const reviewPromises = order.productDetails.map(async (product, index) => {
       const { productId } = product;
       const { content } = reviews[index];
-
-      // Kiểm tra xem người dùng đã đánh giá sản phẩm này hay chưa
-      const existingReview = await Review.findOne({ idAccount: userId, productId: productId });
-      if (existingReview) {
-        return res.status(400).json({
-          message: `You have already reviewed the product with ID ${productId}`,
-        });
-      }
 
       // Tạo đánh giá mới cho từng sản phẩm
       const review = new Review({
@@ -56,6 +55,9 @@ export const createReview = async (req, res) => {
     // Chờ tất cả các đánh giá được lưu vào database
     const savedReviews = await Promise.all(reviewPromises);
 
+    // Cập nhật trạng thái isRated của đơn hàng
+    await Order.findByIdAndUpdate(orderId, { isRated: true });
+
     return res.status(201).json({
       message: "Reviews created successfully",
       data: savedReviews,
@@ -66,7 +68,6 @@ export const createReview = async (req, res) => {
     });
   }
 };
-
 export const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;

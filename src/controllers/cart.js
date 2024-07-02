@@ -5,64 +5,6 @@ import Product from "../models/Product.js";
 import mongoose from "mongoose";
 import Image from "../models/Image.js";
 
-// export const getCart = async (req, res) => {
-//   try {
-//     const { idUser } = req.params;
-
-//     const cartItems = await Cart.find({ user: idUser }).populate({
-//       path: "productDetail",
-//       populate: [
-//         { path: "product", select: "name" },
-//         { path: "sizes", select: "size" }, // Corrected field name for size
-//       ],
-//     });
-
-//     if (!cartItems || cartItems.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "Không có sản phẩm trong giỏ hàng" });
-//     }
-
-//     const groupedCartItems = cartItems.reduce((acc, item) => {
-//       if (
-//         item.productDetail &&
-//         item.productDetail.product &&
-//         item.productDetail.sizes
-//       ) {
-//         // Check if productDetail and its nested fields exist
-//         const key = `${item.productDetail.product.name}-${item.productDetail.sizes.size}`;
-//         if (!acc[key]) {
-//           acc[key] = {
-//             idCart: item._id,
-//             nameProduct: item.productDetail.product.name,
-//             size: item.productDetail.sizes.size,
-//             price: item.productDetail.price,
-//             promotionalPrice: item.productDetail.promotionalPrice,
-//             totalQuantity: 0,
-//             totalPrice: 0,
-//           };
-//         }
-//         acc[key].totalQuantity += item.quantity;
-//         acc[key].totalPrice =
-//           acc[key].promotionalPrice * acc[key].totalQuantity;
-//       }
-//       return acc;
-//     }, {});
-
-//     const cartList = Object.values(groupedCartItems);
-
-//     return res.status(200).json({
-//       message: "Danh sách giỏ hàng",
-//       data: cartList,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       name: error.name,
-//       message: error.message,
-//     });
-//   }
-// };
-
 
 export const getCart = async (req, res) => {
   try {
@@ -180,6 +122,7 @@ export const createCart = async (req, res) => {
   }
 };
 
+
 export const deleteCart = async (req, res) => {
   try {
     const { idCart } = req.body; // Đổi từ params sang body để nhận một mảng các idCart
@@ -191,8 +134,19 @@ export const deleteCart = async (req, res) => {
       });
     }
 
-    // Lặp qua mỗi idCart và xóa từng mục giỏ hàng
-    const deleteResults = await Cart.deleteMany({ _id: { $in: idCart } });
+    // Lấy tất cả các productDetailId từ các idCart được cung cấp
+    const carts = await Cart.find({ _id: { $in: idCart } });
+    if (carts.length === 0) {
+      return res.status(404).json({
+        message: "Không tìm thấy sản phẩm trong giỏ hàng",
+      });
+    }
+
+    // Sử dụng tập hợp để loại bỏ các productDetailId trùng lặp
+    const productDetailIds = new Set(carts.map(cart => cart.productDetailId));
+
+    // Xóa tất cả các mục giỏ hàng liên quan đến các productDetailId duy nhất
+    const deleteResults = await Cart.deleteMany({ productDetailId: { $in: Array.from(productDetailIds) } });
 
     // Kiểm tra số lượng mục giỏ hàng đã được xóa
     if (deleteResults.deletedCount === 0) {

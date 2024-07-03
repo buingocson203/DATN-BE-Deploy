@@ -256,7 +256,7 @@ export const updateOrder = async (req, res) => {
     // Define valid transitions
     const validTransitions = {
       pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
-      waiting: ["delivering", "cancel"], // Chỉ admin có thể chuyển từ waiting sang delivering hoặc cancel
+      waiting: ["delivering"], // Loại bỏ "cancel" khỏi các trạng thái hợp lệ từ "waiting"
       delivering: ["done"], // Chỉ admin có thể chuyển từ delivering sang done
       done: [],
       cancel: [],
@@ -313,6 +313,7 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+
 
 
 // export const getHistoryStatusOrder = async (req, res) => {
@@ -382,3 +383,4 @@ export const getHistoryStatusOrder = async (req, res) => {
     });
   }
 };
+//

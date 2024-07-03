@@ -4,6 +4,7 @@ import Cart from "../models/Cart.js";
 import { orderValid } from "../validation/order.js";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
+
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
   const characters =
@@ -17,6 +18,9 @@ function generateRandomCode(length) {
 }
 
 export const createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const body = req.body;
 
@@ -24,6 +28,8 @@ export const createOrder = async (req, res) => {
     const { error } = orderValid.validate(body, { abortEarly: false });
     if (error) {
       const errors = error.details.map((err) => err.message);
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: errors,
       });
@@ -47,8 +53,10 @@ export const createOrder = async (req, res) => {
       const { productDetailId, promotionalPrice, quantityOrders } = product;
 
       // Kiểm tra sản phẩm có tồn tại không
-      const productExist = await ProductDetail.findById(productDetailId);
+      const productExist = await ProductDetail.findById(productDetailId).session(session);
       if (!productExist) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(404).json({
           message: "Không tìm thấy ProductDetail",
         });
@@ -56,19 +64,23 @@ export const createOrder = async (req, res) => {
 
       // Kiểm tra số lượng sản phẩm có đủ không
       if (productExist.quantity < quantityOrders) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({
           message: `Sản phẩm với ID ${productDetailId} không đủ số lượng`,
         });
       }
 
-      totalPrice += promotionalPrice * quantityOrders;
+      // Trừ số lượng sản phẩm
+      productExist.quantity -= quantityOrders;
+      await productExist.save({ session });
 
-      // Không trừ số lượng sản phẩm tại đây
+      totalPrice += promotionalPrice * quantityOrders;
     }
     newOrder.total_price = totalPrice;
 
     // Lưu đơn hàng vào cơ sở dữ liệu
-    const order = await newOrder.save();
+    const order = await newOrder.save({ session });
 
     // Xóa các mục trong giỏ hàng liên quan đến đơn hàng vừa được tạo thành công
     const productDetailIds = newOrder.productDetails.map(
@@ -77,84 +89,23 @@ export const createOrder = async (req, res) => {
     await Cart.deleteMany({
       user: order.user_id,
       productDetail: { $in: productDetailIds },
-    });
+    }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(200).json({
       message: "Tạo đơn hàng thành công",
       data: order,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     return res.status(500).json({
       message: error.message,
     });
   }
 };
-
-
-
-
-// Các chức năng khác giữ nguyên
-// export const getAllOrders = async (req, res) => {
-//   try {
-//     const { user } = req;
-//     const { status } = req.query;
-
-//     let filter = {};
-
-//     if (user.role !== "admin") {
-//       filter.user_id = user._id;
-//     }
-
-//     if (status) {
-//       filter.orderStatus = status;
-//     }
-
-//     // Fetch orders based on filter criteria
-//     const orders = await Order.find(filter)
-//       .populate("user_id", "userName email")
-//       .sort({ createdAt: -1 });
-
-//     // Iterate through each order
-//     const ordersWithReviews = await Promise.all(
-//       orders.map(async (order) => {
-//         // Iterate through each productDetail in the order
-//         const productDetailsWithReviews = await Promise.all(
-//           order.productDetails.map(async (productDetail) => {
-//             // Fetch reviews for the current productId
-//             const reviews = await Review.find({
-//               productId: productDetail.productId,
-//               idAccount: user._id, // Assuming you want reviews by the logged-in user
-//             });
-
-//             // Check if the user has reviewed this product
-//             const isRated = reviews.length > 0;
-
-//             // Add isRated field to productDetail
-//             return {
-//               ...productDetail.toObject(),
-//               isRated: isRated,
-//             };
-//           })
-//         );
-
-//         // Return the order with updated productDetails including isRated
-//         return {
-//           ...order.toObject(),
-//           productDetails: productDetailsWithReviews,
-//         };
-//       })
-//     );
-
-//     return res.status(200).json({
-//       message: "Fetch All Orders Successful",
-//       data: ordersWithReviews,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: error.message,
-//     });
-//   }
-// };
 
 export const getAllOrders = async (req, res) => {
   try {
@@ -276,15 +227,15 @@ export const updateOrder = async (req, res) => {
       });
     }
 
-    // Nếu trạng thái chuyển thành "done", giảm số lượng của từng sản phẩm trong đơn hàng
-    if (orderStatus === "done") {
+    // Nếu trạng thái chuyển thành "cancel", cộng lại số lượng sản phẩm vào kho
+    if (orderStatus === "cancel") {
       for (const product of order.productDetails) {
         const { productDetailId, quantityOrders } = product;
         const productDetailRecord = await ProductDetail.findById(
           productDetailId
         );
         if (productDetailRecord) {
-          productDetailRecord.quantity -= quantityOrders;
+          productDetailRecord.quantity += quantityOrders;
           await productDetailRecord.save();
         } else {
           return res.status(404).json({
@@ -292,8 +243,6 @@ export const updateOrder = async (req, res) => {
           });
         }
       }
-
-      order.paymentStatus = "paid"; // Cập nhật paymentStatus khi orderStatus chuyển thành "done"
     }
 
     order.orderStatus = orderStatus;
@@ -314,42 +263,6 @@ export const updateOrder = async (req, res) => {
   }
 };
 
-
-
-// export const getHistoryStatusOrder = async (req, res) => {
-//   try {
-//     const { orderId } = req.params;
-
-//     const order = await Order.findById(orderId)
-//       .populate("statusHistory.adminId", "fullName")
-//       .populate("user_id", "fullName"); // assuming 'fullName' is the field you want to display for user
-
-//     if (!order) {
-//       return res.status(404).json({
-//         message: "Order not found",
-//       });
-//     }
-
-//     const statusHistory = order.statusHistory.map((history) => ({
-//       adminId: history.adminId._id,
-//       adminName: history.adminId.fullName,
-//       status: history.status,
-//       timestamp: history.timestamp,
-//       userFullName: order.user_id.fullName, // Adding user's full name to each statusHistory item
-//     }));
-
-//     return res.status(200).json({
-//       message: "Status history retrieved successfully",
-//       orderId: order._id,
-//       statusHistory: statusHistory,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: error.message,
-//     });
-//   }
-// };
-
 export const getHistoryStatusOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -369,7 +282,6 @@ export const getHistoryStatusOrder = async (req, res) => {
       adminName: history.adminId?.fullName || "Unknown", // Default to "Unknown" if adminId or fullName is missing
       status: history.status,
       timestamp: history.timestamp,
-      
     }));
 
     return res.status(200).json({
@@ -383,4 +295,3 @@ export const getHistoryStatusOrder = async (req, res) => {
     });
   }
 };
-//

@@ -102,17 +102,38 @@ export const createCart = async (req, res) => {
         .json({ message: "Số lượng yêu cầu vượt quá số lượng trong kho" });
     }
 
-    const newCart = new Cart({
+    // Kiểm tra xem sản phẩm chi tiết đã có trong giỏ hàng chưa
+    let cartItem = await Cart.findOne({
       user: idUser,
       productDetail: productDetailId,
-      quantity: quantity,
     });
 
-    await newCart.save();
+    if (cartItem) {
+      // Nếu có, cập nhật số lượng sản phẩm trong giỏ hàng
+      cartItem.quantity += quantity;
+
+      // Kiểm tra số lượng mới có vượt quá số lượng trong kho không
+      if (cartItem.quantity > productDetail.quantity) {
+        return res
+          .status(400)
+          .json({ message: "Số lượng yêu cầu vượt quá số lượng trong kho" });
+      }
+
+      await cartItem.save();
+    } else {
+      // Nếu chưa, tạo mới một mục giỏ hàng
+      cartItem = new Cart({
+        user: idUser,
+        productDetail: productDetailId,
+        quantity: quantity,
+      });
+
+      await cartItem.save();
+    }
 
     return res.status(201).json({
       message: "Thêm sản phẩm vào giỏ hàng thành công",
-      data: newCart,
+      data: cartItem,
     });
   } catch (error) {
     return res.status(500).json({
@@ -125,7 +146,7 @@ export const createCart = async (req, res) => {
 
 export const deleteCart = async (req, res) => {
   try {
-    const { idCart } = req.body; // Đổi từ params sang body để nhận một mảng các idCart
+    const { idCart } = req.body; // Nhận idCart từ body
 
     // Kiểm tra xem mảng idCart có tồn tại và không rỗng không
     if (!Array.isArray(idCart) || idCart.length === 0) {
@@ -134,19 +155,8 @@ export const deleteCart = async (req, res) => {
       });
     }
 
-    // Lấy tất cả các productDetailId từ các idCart được cung cấp
-    const carts = await Cart.find({ _id: { $in: idCart } });
-    if (carts.length === 0) {
-      return res.status(404).json({
-        message: "Không tìm thấy sản phẩm trong giỏ hàng",
-      });
-    }
-
-    // Sử dụng tập hợp để loại bỏ các productDetailId trùng lặp
-    const productDetailIds = new Set(carts.map(cart => cart.productDetailId));
-
-    // Xóa tất cả các mục giỏ hàng liên quan đến các productDetailId duy nhất
-    const deleteResults = await Cart.deleteMany({ productDetailId: { $in: Array.from(productDetailIds) } });
+    // Tìm và xóa các mục giỏ hàng theo idCart
+    const deleteResults = await Cart.deleteMany({ _id: { $in: idCart } });
 
     // Kiểm tra số lượng mục giỏ hàng đã được xóa
     if (deleteResults.deletedCount === 0) {

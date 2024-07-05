@@ -10,7 +10,16 @@ const { ObjectId } = mongoose.Types;
 
 export const getInfoProductDetails = async (req, res) => {
   try {
-    const { size, category, minPrice, maxPrice, sort, name, page = 1, limit = 10 } = req.query;
+    const {
+      size,
+      category,
+      minPrice,
+      maxPrice,
+      sort,
+      name,
+      page = 1,
+      limit = 10,
+    } = req.query;
     console.log("Size query:", size);
     console.log("Category query:", category);
     console.log("Min Price query:", minPrice);
@@ -27,6 +36,9 @@ export const getInfoProductDetails = async (req, res) => {
       sortOption = { price: 1 };
     } else if (sort === "name") {
       sortOption = { nameProduct: 1 };
+    } else {
+      // Sắp xếp theo createdAt để sản phẩm mới nhất lên đầu
+      sortOption = { createdAt: -1 };
     }
 
     const productFilter = {};
@@ -41,6 +53,7 @@ export const getInfoProductDetails = async (req, res) => {
 
     const products = await Product.find(productFilter)
       .populate("categoryId")
+      .sort(sortOption) // Thêm sắp xếp vào truy vấn
       .lean()
       .skip(skip)
       .limit(parseInt(limit, 10));

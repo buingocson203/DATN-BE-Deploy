@@ -8,6 +8,7 @@ import Image from "../models/Image.js"; // Import model Image
 const { ObjectId } = mongoose.Types;
 
 
+
 export const getInfoProductDetails = async (req, res) => {
   try {
     const {
@@ -17,6 +18,7 @@ export const getInfoProductDetails = async (req, res) => {
       maxPrice,
       sort,
       name,
+      latest,
       page = 1,
       limit = 10,
     } = req.query;
@@ -26,6 +28,7 @@ export const getInfoProductDetails = async (req, res) => {
     console.log("Max Price query:", maxPrice);
     console.log("Sort query:", sort);
     console.log("Name query:", name);
+    console.log("Latest query:", latest);
     console.log("Page query:", page);
     console.log("Limit query:", limit);
 
@@ -49,14 +52,24 @@ export const getInfoProductDetails = async (req, res) => {
       productFilter.name = new RegExp(name, "i");
     }
 
-    const skip = (page - 1) * limit;
+    let skip = (page - 1) * limit;
+    let products;
 
-    const products = await Product.find(productFilter)
-      .populate("categoryId")
-      .sort(sortOption) // Thêm sắp xếp vào truy vấn
-      .lean()
-      .skip(skip)
-      .limit(parseInt(limit, 10));
+    // Nếu latest=true thì chỉ lấy 8 sản phẩm mới nhất
+    if (latest === "true") {
+      products = await Product.find(productFilter)
+        .populate("categoryId")
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean();
+    } else {
+      products = await Product.find(productFilter)
+        .populate("categoryId")
+        .sort(sortOption) // Thêm sắp xếp vào truy vấn
+        .skip(skip)
+        .limit(parseInt(limit, 10))
+        .lean();
+    }
 
     const productDetailsPromises = products.map(async (product) => {
       if (!product || !product.categoryId) {
@@ -183,7 +196,6 @@ export const getInfoProductDetails = async (req, res) => {
     });
   }
 };
-
 
 export const getProductDetailsById = async (req, res) => {
   try {

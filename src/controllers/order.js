@@ -245,6 +245,11 @@ export const updateOrder = async (req, res) => {
       }
     }
 
+    // Nếu trạng thái chuyển thành "done" và phương thức thanh toán là "cod", cập nhật paymentStatus thành "paid"
+    if (orderStatus === "done" && order.paymentMethod === "cod") {
+      order.paymentStatus = "paid";
+    }
+
     order.orderStatus = orderStatus;
     order.statusHistory.push({
       adminId: user._id,
@@ -262,6 +267,7 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+
 
 export const getHistoryStatusOrder = async (req, res) => {
   try {

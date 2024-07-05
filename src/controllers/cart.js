@@ -143,7 +143,6 @@ export const createCart = async (req, res) => {
   }
 };
 
-
 export const deleteCart = async (req, res) => {
   try {
     const { idCart } = req.body; // Nhận idCart từ body

@@ -301,3 +301,50 @@ export const getHistoryStatusOrder = async (req, res) => {
     });
   }
 };
+
+
+
+export const productBestSeller = async (req, res) => {
+  try {
+    // Lấy thông tin các đơn hàng đã hoàn thành
+    const completedOrders = await Order.find({ orderStatus: "done" });
+
+    if (!completedOrders || completedOrders.length === 0) {
+      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+    }
+
+    // Tính tổng số lượng sản phẩm đã bán
+    const productSales = {};
+    completedOrders.forEach(order => {
+      order.productDetails.forEach(detail => {
+        const key = `${detail.productId}-${detail.productDetailId}`;
+        if (!productSales[key]) {
+          productSales[key] = {
+            productId: detail.productId,
+            productDetailId: detail.productDetailId,
+            productName: detail.productName,
+            totalQuantity: 0,
+            price: detail.price,
+            promotionalPrice: detail.promotionalPrice,
+            image: detail.image,
+          };
+        }
+        productSales[key].totalQuantity += detail.quantityOrders;
+      });
+    });
+
+    // Chuyển đổi kết quả sang mảng và sắp xếp theo số lượng bán được
+    const bestSellingProducts = Object.values(productSales)
+      .sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+    return res.status(200).json({
+      message: "Danh sách sản phẩm bán chạy",
+      data: bestSellingProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};

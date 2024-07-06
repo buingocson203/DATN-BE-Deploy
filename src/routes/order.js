@@ -29,5 +29,5 @@ orderRouter.get(
   getHistoryStatusOrder
 );
 
-orderRouter.get("/product-best-seller", checkPermission, productBestSeller)
+orderRouter.get("/product-best-seller", productBestSeller);
 export default orderRouter;

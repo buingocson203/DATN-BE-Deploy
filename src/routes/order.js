@@ -6,6 +6,8 @@ import {
   getHistoryStatusOrder,
   getOrderDetail,
   productBestSeller,
+  top5BestSellingProducts,
+  topRevenueProducts,
   updateOrder,
 } from "../controllers/order.js";
 import checkoutVnpay from "../controllers/vnpay.js";
@@ -29,5 +31,12 @@ orderRouter.get(
   getHistoryStatusOrder
 );
 
-orderRouter.get("/product-best-seller", checkPermission, productBestSeller);
+orderRouter.get("/product-best-seller", productBestSeller);
+
+// THỐNG KÊ LỌC THEO TUẦN THÁNG NĂM
+// top 5 sản phẩm bán chạy
+orderRouter.get("/top-5-product-best-seller",checkPermission, top5BestSellingProducts);
+
+// top 5 sản phẩm có doanh thu cao nhất
+orderRouter.get("/top-revenue-product",checkPermission, topRevenueProducts)
 export default orderRouter;

@@ -306,11 +306,26 @@ export const getHistoryStatusOrder = async (req, res) => {
 
 export const productBestSeller = async (req, res) => {
   try {
-    // Lấy thông tin các đơn hàng đã hoàn thành
-    const completedOrders = await Order.find({ orderStatus: "done" });
+    // Lấy tham số startDate và endDate từ query parameters
+    const { startDate, endDate } = req.query;
+
+    // Tạo đối tượng filter cho khoảng thời gian
+    let dateFilter = {};
+    if (startDate) {
+      dateFilter.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      dateFilter.$lte = new Date(endDate);
+    }
+
+    // Tìm các đơn hàng đã hoàn thành trong khoảng thời gian cụ thể
+    const completedOrders = await Order.find({
+      orderStatus: "done",
+      createdAt: dateFilter,
+    });
 
     if (!completedOrders || completedOrders.length === 0) {
-      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành trong khoảng thời gian này" });
     }
 
     // Tính tổng số lượng sản phẩm đã bán
@@ -326,6 +341,7 @@ export const productBestSeller = async (req, res) => {
             totalQuantity: 0,
             price: detail.price,
             promotionalPrice: detail.promotionalPrice,
+            importPrice: detail.importPrice, // Đảm bảo trường importPrice được bao gồm
             image: detail.image,
           };
         }
@@ -348,3 +364,7 @@ export const productBestSeller = async (req, res) => {
     });
   }
 };
+
+
+
+

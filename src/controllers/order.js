@@ -306,7 +306,6 @@ export const getHistoryStatusOrder = async (req, res) => {
 
 export const productBestSeller = async (req, res) => {
   try {
-    // Lấy tham số startDate và endDate từ query parameters
     const { startDate, endDate } = req.query;
 
     // Tạo đối tượng filter cho khoảng thời gian
@@ -316,6 +315,10 @@ export const productBestSeller = async (req, res) => {
     }
     if (endDate) {
       dateFilter.$lte = new Date(endDate);
+    }
+
+    if (!startDate && !endDate) {
+      return res.status(400).json({ message: "Vui lòng cung cấp startDate hoặc endDate" });
     }
 
     // Tìm các đơn hàng đã hoàn thành trong khoảng thời gian cụ thể
@@ -328,7 +331,6 @@ export const productBestSeller = async (req, res) => {
       return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành trong khoảng thời gian này" });
     }
 
-    // Tính tổng số lượng sản phẩm đã bán
     const productSales = {};
     completedOrders.forEach(order => {
       order.productDetails.forEach(detail => {
@@ -341,21 +343,27 @@ export const productBestSeller = async (req, res) => {
             totalQuantity: 0,
             price: detail.price,
             promotionalPrice: detail.promotionalPrice,
-            importPrice: detail.importPrice, // Đảm bảo trường importPrice được bao gồm
+            importPrice: detail.importPrice,
             image: detail.image,
+            date: order.createdAt, // Lấy createdAt từ đơn hàng
           };
         }
         productSales[key].totalQuantity += detail.quantityOrders;
       });
     });
 
-    // Chuyển đổi kết quả sang mảng và sắp xếp theo số lượng bán được
     const bestSellingProducts = Object.values(productSales)
       .sort((a, b) => b.totalQuantity - a.totalQuantity);
 
+    // Chuyển đổi định dạng date về ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) nếu cần thiết
+    const formattedProducts = bestSellingProducts.map(product => ({
+      ...product,
+      date: product.date.toISOString(),
+    }));
+
     return res.status(200).json({
       message: "Danh sách sản phẩm bán chạy",
-      data: bestSellingProducts,
+      data: formattedProducts,
     });
   } catch (error) {
     return res.status(500).json({
@@ -364,6 +372,8 @@ export const productBestSeller = async (req, res) => {
     });
   }
 };
+
+
 
 
 

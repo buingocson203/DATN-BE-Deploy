@@ -7,6 +7,7 @@ import {
   getOrderDetail,
   productBestSeller,
   top5BestSellingProducts,
+  top5MostProfitableProducts,
   topRevenueProducts,
   updateOrder,
 } from "../controllers/order.js";
@@ -39,4 +40,7 @@ orderRouter.get("/top-5-product-best-seller",checkPermission, top5BestSellingPro
 
 // top 5 sản phẩm có doanh thu cao nhất
 orderRouter.get("/top-revenue-product",checkPermission, topRevenueProducts)
+
+// top 5 sản phẩm có lợi nhuận cao nhất
+orderRouter.get("/topProfitableProducts", checkPermission, top5MostProfitableProducts)
 export default orderRouter;

@@ -470,3 +470,62 @@ export const topRevenueProducts = async (req, res) => {
     });
   }
 };
+
+
+// top 5 sản phẩm có l��i nhuận cao nhất
+export const top5MostProfitableProducts = async (req, res) => {
+  try {
+    // Lấy thông tin các đơn hàng đã hoàn thành
+    const completedOrders = await Order.find({ orderStatus: "done" });
+
+    if (!completedOrders || completedOrders.length === 0) {
+      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+    }
+
+    // Tính tổng lợi nhuận cho mỗi sản phẩm
+    const productProfits = {};
+    for (const order of completedOrders) {
+      for (const detail of order.productDetails) {
+        const { productDetailId, quantityOrders, promotionalPrice } = detail;
+
+        // Lấy thông tin chi tiết sản phẩm để tính toán lợi nhuận
+        const productDetail = await ProductDetail.findById(productDetailId);
+
+        if (!productDetail) {
+          return res.status(404).json({ message: `Không tìm thấy ProductDetail với ID ${productDetailId}` });
+        }
+
+        const profit = (promotionalPrice - productDetail.importPrice) * quantityOrders;
+
+        const key = `${detail.productId}-${productDetailId}`;
+        if (!productProfits[key]) {
+          productProfits[key] = {
+            productId: detail.productId,
+            productDetailId: productDetailId,
+            productName: detail.productName,
+            totalProfit: 0,
+            promotionalPrice: promotionalPrice,
+            importPrice: productDetail.importPrice,
+            image: detail.image,
+          };
+        }
+        productProfits[key].totalProfit += profit;
+      }
+    }
+
+    // Chuyển đổi kết quả sang mảng và sắp xếp theo lợi nhuận
+    const mostProfitableProducts = Object.values(productProfits)
+      .sort((a, b) => b.totalProfit - a.totalProfit)
+      .slice(0, 5); // Giới hạn kết quả thành top 5 sản phẩm có lợi nhuận cao nhất
+
+    return res.status(200).json({
+      message: "Top 5 sản phẩm có lợi nhuận cao nhất",
+      data: mostProfitableProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};

@@ -49,6 +49,7 @@ export const getCart = async (req, res) => {
             size: item.productDetail.sizes.size,
             sizeId: item.productDetail.sizes.id,
             price: item.productDetail.price,
+            importPrice: item.productDetail.importPrice,
             promotionalPrice: item.productDetail.promotionalPrice,
             totalQuantity: 0,
             totalPrice: 0,

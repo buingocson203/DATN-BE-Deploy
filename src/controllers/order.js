@@ -333,8 +333,6 @@ export const productBestSeller = async (req, res) => {
     });
   }
 };
-
-
 // top 5 sản  phẩm bán chạy
 export const top5BestSellingProducts = async (req, res) => {
   try {

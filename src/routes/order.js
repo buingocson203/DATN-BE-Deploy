@@ -34,6 +34,7 @@ orderRouter.get(
 
 orderRouter.get("/product-best-seller", productBestSeller);
 
+
 // THỐNG KÊ LỌC THEO TUẦN THÁNG NĂM
 // top 5 sản phẩm bán chạy
 orderRouter.get("/top-5-product-best-seller",checkPermission, top5BestSellingProducts);

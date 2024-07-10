@@ -6,6 +6,9 @@ import {
   getHistoryStatusOrder,
   getOrderDetail,
   productBestSeller,
+  top5BestSellingProducts,
+  top5MostProfitableProducts,
+  topRevenueProducts,
   updateOrder,
 } from "../controllers/order.js";
 import checkoutVnpay from "../controllers/vnpay.js";
@@ -29,5 +32,5 @@ orderRouter.get(
   getHistoryStatusOrder
 );
 
-orderRouter.get("/product-best-seller", checkPermission, productBestSeller);
+orderRouter.get("/product-best-seller", productBestSeller);
 export default orderRouter;

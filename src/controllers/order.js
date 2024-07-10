@@ -301,38 +301,36 @@ export const productBestSeller = async (req, res) => {
   }
 };
 // top 5 sản  phẩm bán chạy
+
 export const top5BestSellingProducts = async (req, res) => {
   try {
-    const { period } = req.query; // Lấy khoảng thời gian từ query parameters
+    const { filterBy, year, month, week } = req.query;
+
+    // Xác định khoảng thời gian lọc
     let startDate, endDate;
-    // Xác định khoảng thời gian dựa trên giá trị của period
-    switch (period) {
-      case "week":
-        startDate = moment().startOf('isoWeek').toDate();
-        endDate = moment().endOf('isoWeek').toDate();
-        break;
-      case "month":
-        startDate = moment().startOf('month').toDate();
-        endDate = moment().endOf('month').toDate();
-        break;
-      case "year":
-        startDate = moment().startOf('year').toDate();
-        endDate = moment().endOf('year').toDate();
-        break;
-      default:
-        // Nếu không có giá trị period, lấy tất cả đơn hàng
-        startDate = new Date(0);
-        endDate = new Date();
-        break;
+    if (filterBy === "year") {
+      startDate = moment().year(year).startOf('year').toDate();
+      endDate = moment().year(year).endOf('year').toDate();
+    } else if (filterBy === "month") {
+      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
+      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
+    } else if (filterBy === "week") {
+      startDate = moment().year(year).week(week).startOf('week').toDate();
+      endDate = moment().year(year).week(week).endOf('week').toDate();
+    } else {
+      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
     }
+
     // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
     const completedOrders = await Order.find({
       orderStatus: "done",
-      updatedAt: { $gte: startDate, $lte: endDate },
+      createdAt: { $gte: startDate, $lte: endDate },
     });
+
     if (!completedOrders || completedOrders.length === 0) {
       return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
     }
+
     // Tính tổng số lượng sản phẩm đã bán
     const productSales = {};
     completedOrders.forEach(order => {
@@ -354,10 +352,12 @@ export const top5BestSellingProducts = async (req, res) => {
         productSales[key].totalQuantity += detail.quantityOrders;
       });
     });
+
     // Chuyển đổi kết quả sang mảng và sắp xếp theo số lượng bán được
     const bestSellingProducts = Object.values(productSales)
       .sort((a, b) => b.totalQuantity - a.totalQuantity)
       .slice(0, 5); // Giới hạn kết quả thành top 5 sản phẩm bán chạy
+
     return res.status(200).json({
       message: "Danh sách sản phẩm bán chạy",
       data: bestSellingProducts,

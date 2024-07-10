@@ -284,7 +284,7 @@ export const productBestSeller = async (req, res) => {
     const completedOrders = await Order.find({
       orderStatus: "done",
       createdAt: dateFilter,
-    });
+    }).select('productDetails total_price createdAt'); // Chỉ chọn các trường cần thiết
 
     if (!completedOrders || completedOrders.length === 0) {
       return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành trong khoảng thời gian này" });
@@ -305,6 +305,7 @@ export const productBestSeller = async (req, res) => {
             importPrice: detail.importPrice,
             totalRevenue: 0,
             image: detail.image,
+            date: order.createdAt, // Thêm createdAt vào đối tượng productSales
           };
         }
         productSales[key].totalQuantity += detail.quantityOrders;
@@ -330,6 +331,7 @@ export const productBestSeller = async (req, res) => {
     });
   }
 };
+
 
 // top 5 sản  phẩm bán chạy
 

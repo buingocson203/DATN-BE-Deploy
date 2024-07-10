@@ -5,6 +5,7 @@ import { orderValid } from "../validation/order.js";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
 import moment from "moment";
+import { sendOrderConfirmationEmail } from "../utils/email.js";
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
   const characters =
@@ -80,6 +81,8 @@ export const createOrder = async (req, res) => {
     }).session(session);
     await session.commitTransaction();
     session.endSession();
+    // Gửi email xác nhận đơn hàng
+    sendOrderConfirmationEmail(req.body.email, order);
     return res.status(200).json({
       message: "Tạo đơn hàng thành công",
       data: order,
@@ -344,6 +347,8 @@ export const top5BestSellingProducts = async (req, res) => {
             price: detail.price,
             promotionalPrice: detail.promotionalPrice,
             image: detail.image,
+            sizeId: detail.sizeId,
+            sizeName: detail.sizeName,
           };
         }
         productSales[key].totalQuantity += detail.quantityOrders;
@@ -367,11 +372,33 @@ export const top5BestSellingProducts = async (req, res) => {
 // top 5 sản phẩm có doanh thu cao nhất
 export const topRevenueProducts = async (req, res) => {
   try {
-    // Lấy thông tin các đơn hàng đã hoàn thành
-    const completedOrders = await Order.find({ orderStatus: "done" });
+    const { filterBy, year, month, week } = req.query;
+
+    // Xác định khoảng thời gian lọc
+    let startDate, endDate;
+    if (filterBy === "year") {
+      startDate = moment().year(year).startOf('year').toDate();
+      endDate = moment().year(year).endOf('year').toDate();
+    } else if (filterBy === "month") {
+      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
+      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
+    } else if (filterBy === "week") {
+      startDate = moment().year(year).week(week).startOf('week').toDate();
+      endDate = moment().year(year).week(week).endOf('week').toDate();
+    } else {
+      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
+    }
+
+    // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
+    const completedOrders = await Order.find({
+      orderStatus: "done",
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
     if (!completedOrders || completedOrders.length === 0) {
       return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
     }
+
     // Tính tổng doanh thu cho mỗi sản phẩm
     const productRevenue = {};
     completedOrders.forEach(order => {
@@ -385,15 +412,19 @@ export const topRevenueProducts = async (req, res) => {
             totalRevenue: 0,
             promotionalPrice: detail.promotionalPrice,
             image: detail.image,
+            sizeId: detail.sizeId,
+            sizeName: detail.sizeName,
           };
         }
         productRevenue[key].totalRevenue += detail.promotionalPrice * detail.quantityOrders;
       });
     });
+
     // Chuyển đổi kết quả sang mảng và sắp xếp theo doanh thu
     const topRevenueProducts = Object.values(productRevenue)
       .sort((a, b) => b.totalRevenue - a.totalRevenue)
       .slice(0, 5); // Giới hạn kết quả thành top 5 sản phẩm có doanh thu cao nhất
+
     return res.status(200).json({
       message: "Top 5 sản phẩm có doanh thu cao nhất",
       data: topRevenueProducts,
@@ -406,12 +437,32 @@ export const topRevenueProducts = async (req, res) => {
   }
 };
 
-
 // top 5 sản phẩm có l��i nhuận cao nhất
+
 export const top5MostProfitableProducts = async (req, res) => {
   try {
-    // Lấy thông tin các đơn hàng đã hoàn thành
-    const completedOrders = await Order.find({ orderStatus: "done" });
+    const { filterBy, year, month, week } = req.query;
+
+    // Xác định khoảng thời gian lọc
+    let startDate, endDate;
+    if (filterBy === "year") {
+      startDate = moment().year(year).startOf('year').toDate();
+      endDate = moment().year(year).endOf('year').toDate();
+    } else if (filterBy === "month") {
+      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
+      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
+    } else if (filterBy === "week") {
+      startDate = moment().year(year).week(week).startOf('week').toDate();
+      endDate = moment().year(year).week(week).endOf('week').toDate();
+    } else {
+      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
+    }
+
+    // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
+    const completedOrders = await Order.find({
+      orderStatus: "done",
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
 
     if (!completedOrders || completedOrders.length === 0) {
       return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
@@ -442,6 +493,8 @@ export const top5MostProfitableProducts = async (req, res) => {
             promotionalPrice: promotionalPrice,
             importPrice: productDetail.importPrice,
             image: detail.image,
+            sizeId: detail.sizeId,
+            sizeName: detail.sizeName,
           };
         }
         productProfits[key].totalProfit += profit;

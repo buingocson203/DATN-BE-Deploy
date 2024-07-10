@@ -5,7 +5,7 @@ import { orderValid } from "../validation/order.js";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
 import moment from "moment";
-import { sendOrderConfirmationEmail } from "../utils/email.js";
+import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "../utils/email.js";
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
   const characters =
@@ -222,6 +222,8 @@ export const updateOrder = async (req, res) => {
       status: orderStatus,
     });
     await order.save();
+     // Gửi email thông báo trạng thái đơn hàng được cập nhật
+     sendOrderStatusUpdateEmail(req.body.email, order, orderStatus);
     return res.status(200).json({
       message: "Update Order Successful",
       data: order,
@@ -301,7 +303,6 @@ export const productBestSeller = async (req, res) => {
   }
 };
 // top 5 sản  phẩm bán chạy
-
 export const top5BestSellingProducts = async (req, res) => {
   try {
     const { filterBy, year, month, week } = req.query;
@@ -436,9 +437,7 @@ export const topRevenueProducts = async (req, res) => {
     });
   }
 };
-
 // top 5 sản phẩm có l��i nhuận cao nhất
-
 export const top5MostProfitableProducts = async (req, res) => {
   try {
     const { filterBy, year, month, week } = req.query;

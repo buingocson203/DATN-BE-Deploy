@@ -44,7 +44,7 @@ export const sendOrderConfirmationEmail = (to, order) => {
 
   const mailOptions = {
     from: `"Fsneaker Shop" <${process.env.EMAIL_USER}>`,
-    to: "huyhungsp2003@gmail.com", // Gửi email đến người đặt hàng
+    to: to, // Gửi email đến người đặt hàng
     subject: `Xác nhận đơn hàng #${order.codeOrders}`,
     text: `Cảm ơn bạn đã đặt hàng!`,
     html: `<h1>Cảm ơn bạn đã đặt hàng!</h1>
@@ -84,7 +84,7 @@ export const sendOrderStatusUpdateEmail = (to, order, newStatus) => {
     .join("");
   const mailOptions = {
     from: `"Fsneaker Shop" <${process.env.EMAIL_USER}>`,
-    to: "huyhungsp2003@gmail.com", // Email của khách hàng
+    to: to, // Email của khách hàng
     subject: `Cập nhật trạng thái đơn hàng #${order.codeOrders}`,
     text: `Đơn hàng của bạn có mã:  đã được cập nhật trạng thái: ${translatedStatus}.`,
     html: `<h2>Cập nhật trạng thái đơn hàng!</h2>

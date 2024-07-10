@@ -10,6 +10,7 @@ export const orderValid = Joi.object({
       productId: Joi.string().required(),
       price: Joi.number().required(),
       promotionalPrice: Joi.number().required(),
+      importPrice: Joi.number().required(), // Thêm trường importPrice
       image: Joi.string().required(),
       sizeId: Joi.string().required(),
       sizeName: Joi.string().required(),

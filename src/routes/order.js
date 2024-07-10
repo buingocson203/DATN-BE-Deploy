@@ -33,14 +33,4 @@ orderRouter.get(
 );
 
 orderRouter.get("/product-best-seller", productBestSeller);
-
-// THỐNG KÊ LỌC THEO TUẦN THÁNG NĂM
-// top 5 sản phẩm bán chạy
-orderRouter.get("/top-5-product-best-seller",checkPermission, top5BestSellingProducts);
-
-// top 5 sản phẩm có doanh thu cao nhất
-orderRouter.get("/top-revenue-product",checkPermission, topRevenueProducts)
-
-// top 5 sản phẩm có lợi nhuận cao nhất
-orderRouter.get("/topProfitableProducts", checkPermission, top5MostProfitableProducts)
 export default orderRouter;

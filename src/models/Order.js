@@ -29,6 +29,7 @@ const orderSchema = new mongoose.Schema(
         productName: { type: String, required: true },
         price: { type: Number, required: true },
         promotionalPrice: { type: Number, required: true },
+        importPrice: { type: Number, required: true }, // Thêm trường importPrice
         image: { type: String, required: true },
         sizeId: { type: mongoose.Types.ObjectId, required: true },
         sizeName: { type: String, required: true },

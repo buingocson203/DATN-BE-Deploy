@@ -1,6 +1,7 @@
 import ProductDetail from "../models/ProductDetail.js";
 import { productDetailValid } from "../validation/productDetail.js";
 import mongoose from "mongoose";
+import Image from "../models/Image.js";
 
 export const create = async (req, res) => {
   try {
@@ -130,7 +131,11 @@ export const getDetailProductDetail = async (req, res) => {
         message: "Không tìm thấy chi tiết sản phẩm",
       });
     }
-
+// Tìm ảnh sản phẩm loại "thumbnail"
+const thumbnailImage = await Image.findOne({
+  productId: productDetail.product._id,
+  type: "thumbnail",
+});
     // Xử lý thông tin chi tiết sản phẩm
     const formattedProductDetail = {
       productDetailId: productDetail._id,
@@ -141,6 +146,7 @@ export const getDetailProductDetail = async (req, res) => {
       price: productDetail.price,
       importPrice: productDetail.importPrice,
       promotionalPrice: productDetail.promotionalPrice,
+      productImage: thumbnailImage ? thumbnailImage.image : null,
     };
 
     return res.status(200).json({

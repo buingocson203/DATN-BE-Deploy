@@ -28,6 +28,12 @@ const productDetailSchema = new mongoose.Schema(
       ref: "Size",
       required: true,
     },
+    images: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Image",
+      },
+    ],
   },
   {
     versionKey: false,

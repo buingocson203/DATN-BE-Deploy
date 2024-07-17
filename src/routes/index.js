@@ -11,6 +11,7 @@ import routerCart from "./cart.js";
 import ordeDetailRouter from "./oderDetail.js";
 import routerpurchasehistory from "./purchasehistory.js";
 import routerReview from "./review.js";
+import routerFavourite from "./favourite.js";
 
 const router = express.Router();
 router.use("/product", routerProduct);
@@ -25,4 +26,5 @@ router.use("/cart", routerCart)
 router.use("/oderDetail", ordeDetailRouter);
 router.use("/purchaseHistory", routerpurchasehistory);
 router.use("/review", routerReview);
+router.use("/favourite", routerFavourite)
 export default router;

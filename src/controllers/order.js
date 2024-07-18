@@ -5,6 +5,7 @@ import { orderValid } from "../validation/order.js";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
 import moment from "moment";
+import User from "../models/User.js";
 import { sendOrderConfirmationEmail, sendOrderStatusUpdateEmail } from "../utils/email.js";
 // Hàm sinh chuỗi ngẫu nhiên
 function generateRandomCode(length) {
@@ -47,7 +48,9 @@ export const createOrder = async (req, res) => {
     for (const product of newOrder.productDetails) {
       const { productDetailId, promotionalPrice, quantityOrders } = product;
       // Kiểm tra sản phẩm có tồn tại không
-      const productExist = await ProductDetail.findById(productDetailId).session(session);
+      const productExist = await ProductDetail.findById(
+        productDetailId
+      ).session(session);
       if (!productExist) {
         await session.abortTransaction();
         session.endSession();
@@ -81,8 +84,15 @@ export const createOrder = async (req, res) => {
     }).session(session);
     await session.commitTransaction();
     session.endSession();
+    // Lấy email của người dùng từ bảng User
+    const user = await User.findById(order.user_id);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
     // Gửi email xác nhận đơn hàng
-    sendOrderConfirmationEmail(req.body.email, order);
+    sendOrderConfirmationEmail(user.email, order);
     return res.status(200).json({
       message: "Tạo đơn hàng thành công",
       data: order,
@@ -222,8 +232,15 @@ export const updateOrder = async (req, res) => {
       status: orderStatus,
     });
     await order.save();
-     // Gửi email thông báo trạng thái đơn hàng được cập nhật
-     sendOrderStatusUpdateEmail(req.body.email, order, orderStatus);
+    // Lấy email của người dùng từ bảng User
+    const orderUser = await User.findById(order.user_id);
+    if (!orderUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    // Gửi email thông báo trạng thái đơn hàng được cập nhật
+    sendOrderStatusUpdateEmail(orderUser.email, order, orderStatus);
     return res.status(200).json({
       message: "Update Order Successful",
       data: order,

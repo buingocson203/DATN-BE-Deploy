@@ -353,39 +353,36 @@ export const productBestSeller = async (req, res) => {
 
 
 // top 5 sản  phẩm bán chạy
+
 export const top5BestSellingProducts = async (req, res) => {
   try {
-    const { filterBy, year, month, week } = req.query;
+    const { startDate, endDate } = req.query;
 
-    // Xác định khoảng thời gian lọc
-    let startDate, endDate;
-    if (filterBy === "year") {
-      startDate = moment().year(year).startOf('year').toDate();
-      endDate = moment().year(year).endOf('year').toDate();
-    } else if (filterBy === "month") {
-      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
-      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
-    } else if (filterBy === "week") {
-      startDate = moment().year(year).week(week).startOf('week').toDate();
-      endDate = moment().year(year).week(week).endOf('week').toDate();
-    } else {
-      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Cần cung cấp startDate và endDate" });
     }
+
+    const start = moment(startDate).startOf("day").toDate();
+    const end = moment(endDate).endOf("day").toDate();
 
     // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
     const completedOrders = await Order.find({
       orderStatus: "done",
-      createdAt: { $gte: startDate, $lte: endDate },
+      createdAt: { $gte: start, $lte: end },
     });
 
     if (!completedOrders || completedOrders.length === 0) {
-      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+      return res
+        .status(404)
+        .json({ message: "Không có đơn hàng nào đã hoàn thành" });
     }
 
     // Tính tổng số lượng sản phẩm đã bán
     const productSales = {};
-    completedOrders.forEach(order => {
-      order.productDetails.forEach(detail => {
+    completedOrders.forEach((order) => {
+      order.productDetails.forEach((detail) => {
         const key = `${detail.productId}-${detail.productDetailId}`;
         if (!productSales[key]) {
           productSales[key] = {
@@ -423,37 +420,33 @@ export const top5BestSellingProducts = async (req, res) => {
 // top 5 sản phẩm có doanh thu cao nhất
 export const topRevenueProducts = async (req, res) => {
   try {
-    const { filterBy, year, month, week } = req.query;
+    const { startDate, endDate } = req.query;
 
-    // Xác định khoảng thời gian lọc
-    let startDate, endDate;
-    if (filterBy === "year") {
-      startDate = moment().year(year).startOf('year').toDate();
-      endDate = moment().year(year).endOf('year').toDate();
-    } else if (filterBy === "month") {
-      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
-      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
-    } else if (filterBy === "week") {
-      startDate = moment().year(year).week(week).startOf('week').toDate();
-      endDate = moment().year(year).week(week).endOf('week').toDate();
-    } else {
-      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Cần cung cấp startDate và endDate" });
     }
+
+    const start = moment(startDate).startOf("day").toDate();
+    const end = moment(endDate).endOf("day").toDate();
 
     // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
     const completedOrders = await Order.find({
       orderStatus: "done",
-      createdAt: { $gte: startDate, $lte: endDate },
+      createdAt: { $gte: start, $lte: end },
     });
 
     if (!completedOrders || completedOrders.length === 0) {
-      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+      return res
+        .status(404)
+        .json({ message: "Không có đơn hàng nào đã hoàn thành" });
     }
 
     // Tính tổng doanh thu cho mỗi sản phẩm
     const productRevenue = {};
-    completedOrders.forEach(order => {
-      order.productDetails.forEach(detail => {
+    completedOrders.forEach((order) => {
+      order.productDetails.forEach((detail) => {
         const key = `${detail.productId}-${detail.productDetailId}`;
         if (!productRevenue[key]) {
           productRevenue[key] = {
@@ -467,7 +460,8 @@ export const topRevenueProducts = async (req, res) => {
             sizeName: detail.sizeName,
           };
         }
-        productRevenue[key].totalRevenue += detail.promotionalPrice * detail.quantityOrders;
+        productRevenue[key].totalRevenue +=
+          detail.promotionalPrice * detail.quantityOrders;
       });
     });
 
@@ -488,51 +482,58 @@ export const topRevenueProducts = async (req, res) => {
   }
 };
 // top 5 sản phẩm có l��i nhuận cao nhất
+
 export const top5MostProfitableProducts = async (req, res) => {
   try {
-    const { filterBy, year, month, week } = req.query;
+    const { startDate, endDate } = req.query;
 
-    // Xác định khoảng thời gian lọc
-    let startDate, endDate;
-    if (filterBy === "year") {
-      startDate = moment().year(year).startOf('year').toDate();
-      endDate = moment().year(year).endOf('year').toDate();
-    } else if (filterBy === "month") {
-      startDate = moment().year(year).month(month - 1).startOf('month').toDate();
-      endDate = moment().year(year).month(month - 1).endOf('month').toDate();
-    } else if (filterBy === "week") {
-      startDate = moment().year(year).week(week).startOf('week').toDate();
-      endDate = moment().year(year).week(week).endOf('week').toDate();
-    } else {
-      return res.status(400).json({ message: "Tham số lọc không hợp lệ" });
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Cần cung cấp startDate và endDate" });
     }
+
+    const start = moment(startDate).startOf("day").toDate();
+    const end = moment(endDate).endOf("day").toDate();
 
     // Lấy thông tin các đơn hàng đã hoàn thành trong khoảng thời gian
     const completedOrders = await Order.find({
       orderStatus: "done",
-      createdAt: { $gte: startDate, $lte: endDate },
+      createdAt: { $gte: start, $lte: end },
     });
 
     if (!completedOrders || completedOrders.length === 0) {
-      return res.status(404).json({ message: "Không có đơn hàng nào đã hoàn thành" });
+      return res
+        .status(404)
+        .json({ message: "Không có đơn hàng nào đã hoàn thành" });
     }
 
     // Tính tổng lợi nhuận cho mỗi sản phẩm
     const productProfits = {};
+    const productDetailMap = new Map();
+
     for (const order of completedOrders) {
       for (const detail of order.productDetails) {
         const { productDetailId, quantityOrders, promotionalPrice } = detail;
 
-        // Lấy thông tin chi tiết sản phẩm để tính toán lợi nhuận
-        const productDetail = await ProductDetail.findById(productDetailId);
-
+        // Kiểm tra và lấy thông tin chi tiết sản phẩm từ map
+        let productDetail = productDetailMap.get(productDetailId);
         if (!productDetail) {
-          return res.status(404).json({ message: `Không tìm thấy ProductDetail với ID ${productDetailId}` });
+          productDetail = await ProductDetail.findById(productDetailId);
+          if (!productDetail) {
+            return res
+              .status(404)
+              .json({
+                message: `Không tìm thấy ProductDetail với ID ${productDetailId}`,
+              });
+          }
+          productDetailMap.set(productDetailId, productDetail);
         }
 
-        const profit = (promotionalPrice - productDetail.importPrice) * quantityOrders;
-
+        const profit =
+          (promotionalPrice - productDetail.importPrice) * quantityOrders;
         const key = `${detail.productId}-${productDetailId}`;
+
         if (!productProfits[key]) {
           productProfits[key] = {
             productId: detail.productId,

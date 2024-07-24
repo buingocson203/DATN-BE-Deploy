@@ -3,24 +3,32 @@ import Product from "../models/Product.js";
 import Size from "../models/Size.js";
 import { productValid } from "../validation/product.js";
 
+
 export const getList = async (req, res) => {
   try {
-    // res.send('Lay danh sach san pham')
-    // const products = await Product.find().populate("categoryId");
-    const {_page=1, _limit=10, _sort="createdAt", _oder="asc"} = req.query
+    const {
+      _page = 1,
+      _limit = 10,
+      _sort = "createdAt",
+      _order = "desc",
+    } = req.query; // _order mặc định là "desc"
+
     const options = {
       page: _page,
       limit: _limit,
       sort: {
-        [_sort]: _oder === 'asc' ? 1 : -1
+        [_sort]: _order === "asc" ? 1 : -1,
       },
-    }
-    const products = await Product.paginate({}, options)
+    };
+
+    const products = await Product.paginate({}, options);
+
     if (!products.docs || products.docs.length === 0) {
       return res.status(404).json({
         message: "Khong tim thay san pham",
       });
     }
+
     return res.status(200).json({
       message: "Tim thanh cong san pham",
       datas: products,

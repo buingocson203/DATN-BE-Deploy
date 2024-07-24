@@ -188,9 +188,9 @@ export const updateOrder = async (req, res) => {
     // Xác định các trạng thái chuyển đổi hợp lệ
     const validTransitions = {
       pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
-      waiting: ["delivering", "cancel"], // Cho phép chuyển từ waiting sang cancel
-      delivering: ["done", "cancel"], // Cho phép chuyển từ delivering sang cancel
-      done: [],
+      waiting: ["delivering", "cancel"],
+      delivering: ["done", "cancel"],
+      done: ["cancel"], // Cho phép chuyển từ done sang cancel
       cancel: [],
     };
     // Kiểm tra quyền của user và điều chỉnh validTransitions
@@ -249,6 +249,7 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+
 
 
 export const getHistoryStatusOrder = async (req, res) => {

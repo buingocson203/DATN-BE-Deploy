@@ -185,11 +185,11 @@ export const updateOrder = async (req, res) => {
         message: "Order not found",
       });
     }
-    // Define valid transitions
+    // Xác định các trạng thái chuyển đổi hợp lệ
     const validTransitions = {
       pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
       waiting: ["delivering"], // Loại bỏ "cancel" khỏi các trạng thái hợp lệ từ "waiting"
-      delivering: ["done"], // Chỉ admin có thể chuyển từ delivering sang done
+      delivering: ["done", "cancel"], // Cho phép chuyển từ delivering sang cancel
       done: [],
       cancel: [],
     };
@@ -202,22 +202,20 @@ export const updateOrder = async (req, res) => {
     // Kiểm tra trạng thái hợp lệ
     if (!validTransitions[order.orderStatus].includes(orderStatus)) {
       return res.status(400).json({
-        message: `Invalid status transition from ${order.orderStatus} to ${orderStatus}`,
+        message: `Chuyển đổi trạng thái không hợp lệ từ ${order.orderStatus} sang ${orderStatus}`,
       });
     }
     // Nếu trạng thái chuyển thành "cancel", cộng lại số lượng sản phẩm vào kho
     if (orderStatus === "cancel") {
       for (const product of order.productDetails) {
         const { productDetailId, quantityOrders } = product;
-        const productDetailRecord = await ProductDetail.findById(
-          productDetailId
-        );
+        const productDetailRecord = await ProductDetail.findById(productDetailId);
         if (productDetailRecord) {
           productDetailRecord.quantity += quantityOrders;
           await productDetailRecord.save();
         } else {
           return res.status(404).json({
-            message: `ProductDetail with ID ${productDetailId} not found`,
+            message: `ProductDetail với ID ${productDetailId} không tìm thấy`,
           });
         }
       }
@@ -251,6 +249,7 @@ export const updateOrder = async (req, res) => {
     });
   }
 };
+
 export const getHistoryStatusOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -350,8 +349,6 @@ export const productBestSeller = async (req, res) => {
     });
   }
 };
-
-
 // top 5 sản  phẩm bán chạy
 
 export const top5BestSellingProducts = async (req, res) => {

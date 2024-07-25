@@ -104,3 +104,25 @@ export const sendOrderStatusUpdateEmail = (to, order, newStatus) => {
     }
   });
 };
+
+
+export const sendNewPasswordEmail = (to, newPassword) => {
+  const mailOptions = {
+    from: `"Fsneaker Shop" <${process.env.EMAIL_USER}>`,
+    to: to, // Gửi email đến người dùng
+    subject: `Mật khẩu mới của bạn`,
+    text: `Mật khẩu mới của bạn là: ${newPassword}`,
+    html: `<h1>Mật khẩu mới của bạn</h1>
+           <p>Mật khẩu mới của bạn là: <strong>${newPassword}</strong></p>
+           <span>Vui lòng thay đổi mật khẩu ngay khi nhận được mật khẩu mới này để tránh kẻ gian có thể truy cập vào tài khoản của bạn</span>
+           `,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error sending email:", error);
+    } else {
+      console.log("Email sent:", info.response);
+    }
+  });
+};

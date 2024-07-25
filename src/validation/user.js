@@ -27,3 +27,16 @@ export const updateUserValidator = Joi.object({
   email: Joi.string().email(),
   gender: Joi.string(),
 }).min(1); // Tối thiểu phải có một trường dữ liệu để cập nhật
+
+// đổi mk
+
+export const changePasswordValidator = Joi.object({
+  oldPassword: Joi.string().min(6).required().messages({
+    "string.min": "Mật khẩu cũ phải có ít nhất 6 ký tự",
+    "any.required": "Mật khẩu cũ là bắt buộc",
+  }),
+  newPassword: Joi.string().min(6).required().messages({
+    "string.min": "Mật khẩu mới phải có ít nhất 6 ký tự",
+    "any.required": "Mật khẩu mới là bắt buộc",
+  }),
+});

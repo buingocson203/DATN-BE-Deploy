@@ -1,8 +1,9 @@
-import { signInValidator, signUpValidator, updateUserAdminValidator, updateUserValidator } from "../validation/user.js";
+import { changePasswordValidator, signInValidator, signUpValidator, updateUserAdminValidator, updateUserValidator } from "../validation/user.js";
 import User from "../models/User.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { sendNewPasswordEmail } from "../utils/email.js";
 dotenv.config();
 const { SECRET_CODE } = process.env;
 export const signUp = async (req, res) => {
@@ -321,6 +322,103 @@ export const unlockUser = async (req, res) => {
     return res.status(200).json({
       message: "Người dùng đã được mở khóa thành công",
       user: user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};
+
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    // Validate passwords
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message:
+          "Vui lòng nhập đầy đủ mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "Mật khẩu mới và xác nhận mật khẩu mới không khớp",
+      });
+    }
+
+    // Tìm người dùng theo ID
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await bcryptjs.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Mật khẩu cũ không đúng",
+      });
+    }
+
+    // Mã hóa mật khẩu mới và cập nhật
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Đổi mật khẩu thành công",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      name: error.name,
+      message: error.message,
+    });
+  }
+};
+
+const generateRandomPassword = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // Tạo mật khẩu 6 chữ số
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Kiểm tra email có tồn tại trong hệ thống không
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Email không tồn tại",
+      });
+    }
+
+    // Sinh mật khẩu mới
+    const newPassword = generateRandomPassword();
+
+    // Hash mật khẩu mới
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+    // Cập nhật mật khẩu mới vào database
+    user.password = hashedPassword;
+    await user.save();
+
+    // Gửi email chứa mật khẩu mới
+    sendNewPasswordEmail(email, newPassword);
+
+    return res.status(200).json({
+      message: "Mật khẩu mới đã được gửi vào email của bạn",
     });
   } catch (error) {
     return res.status(500).json({

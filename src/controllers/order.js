@@ -185,26 +185,40 @@ export const updateOrder = async (req, res) => {
         message: "Order not found",
       });
     }
+
     // Xác định các trạng thái chuyển đổi hợp lệ
     const validTransitions = {
       pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
-      waiting: ["delivering", "cancel"],
+      waiting: ["delivering", "done", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
       delivering: ["done", "cancel"],
-      done: ["cancel"], // Cho phép chuyển từ done sang cancel
+      done: ["cancel"],
       cancel: [],
     };
+
     // Kiểm tra quyền của user và điều chỉnh validTransitions
-    if (user.role === "user" && order.orderStatus !== "pending") {
-      return res.status(403).json({
-        message: "Bạn không có quyền thay đổi trạng thái đơn hàng này",
-      });
+    if (user.role !== "admin") {
+      // Thành viên không được phép chuyển từ waiting sang cancel
+      if (order.orderStatus === "waiting" && orderStatus === "cancel") {
+        return res.status(403).json({
+          message: "Bạn không có quyền thay đổi trạng thái đơn hàng này",
+        });
+      }
+
+      // Thành viên không được phép chuyển trạng thái đơn hàng nếu trạng thái hiện tại không phải là pending
+      if (order.orderStatus !== "pending") {
+        return res.status(403).json({
+          message: "Bạn không có quyền thay đổi trạng thái đơn hàng này",
+        });
+      }
     }
+
     // Kiểm tra trạng thái hợp lệ
     if (!validTransitions[order.orderStatus].includes(orderStatus)) {
       return res.status(400).json({
         message: `Chuyển đổi trạng thái không hợp lệ từ ${order.orderStatus} sang ${orderStatus}`,
       });
     }
+
     // Nếu trạng thái chuyển thành "cancel", cộng lại số lượng sản phẩm vào kho
     if (orderStatus === "cancel") {
       for (const product of order.productDetails) {
@@ -220,16 +234,20 @@ export const updateOrder = async (req, res) => {
         }
       }
     }
+
     // Nếu trạng thái chuyển thành "done" và phương thức thanh toán là "cod", cập nhật paymentStatus thành "paid"
     if (orderStatus === "done" && order.paymentMethod === "cod") {
       order.paymentStatus = "paid";
     }
+
     order.orderStatus = orderStatus;
     order.statusHistory.push({
       adminId: user._id,
       status: orderStatus,
     });
+
     await order.save();
+
     // Lấy email của người dùng từ bảng User
     const orderUser = await User.findById(order.user_id);
     if (!orderUser) {
@@ -237,8 +255,10 @@ export const updateOrder = async (req, res) => {
         message: "User not found",
       });
     }
+
     // Gửi email thông báo trạng thái đơn hàng được cập nhật
     sendOrderStatusUpdateEmail(orderUser.email, order, orderStatus);
+
     return res.status(200).json({
       message: "Update Order Successful",
       data: order,

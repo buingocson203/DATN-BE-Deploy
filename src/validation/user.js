@@ -23,7 +23,9 @@ export const updateUserAdminValidator = Joi.object({
 export const updateUserValidator = Joi.object({
   userName: Joi.string().min(6),
   fullName: Joi.string(),
-  tel: Joi.number(),
+  tel: Joi.string(),
+  address: Joi.string(),
+  role: Joi.string(),
   email: Joi.string().email(),
   gender: Joi.string(),
 }).min(1); // Tối thiểu phải có một trường dữ liệu để cập nhật

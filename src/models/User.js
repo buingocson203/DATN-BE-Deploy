@@ -5,13 +5,13 @@ const userSchema = new mongoose.Schema(
   {
     userName: {
       type: String,
-      required: true,
     },
     fullName: {
-      type: String
+      type: String,
     },
     tel: {
-      type: Number
+      type: Number,
+      required: true,
     },
     email: {
       type: String,
@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
     gender: {
-      type: String
+      type: String,
     },
     password: {
       type: String,
@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      default: false
-    }
+      default: false,
+    },
   },
   { versionKey: false, timestamps: true }
 );

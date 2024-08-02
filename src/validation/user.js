@@ -1,7 +1,7 @@
 import Joi from "joi";
 // signUp
 export const signUpValidator = Joi.object({
-  userName: Joi.string().required().min(6),
+  tel: Joi.number().required().min(10),
   email: Joi.string().required().email(),
   fullName: Joi.string().required(),
   address: Joi.string().required(),

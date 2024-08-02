@@ -23,12 +23,12 @@ export const signUp = async (req, res) => {
       });
     }
 
-    const userNameExists = await User.findOne({ userName: req.body.userName });
-    if (userNameExists) {
-      return res.status(400).json({
-        message: "Tên đăng nhập đã tồn tại",
-      });
-    }
+    // const userNameExists = await User.findOne({ userName: req.body.userName });
+    // if (userNameExists) {
+    //   return res.status(400).json({
+    //     message: "Tên đăng nhập đã tồn tại",
+    //   });
+    // }
 
     const hashedPassword = await bcryptjs.hash(req.body.password, 10);
 

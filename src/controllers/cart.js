@@ -10,7 +10,7 @@ export const getCart = async (req, res) => {
   try {
     const { idUser } = req.params;
 
-    const cartItems = await Cart.find({ user: idUser }).populate({
+    const cartItems = await Cart.find({ user: idUser }).sort({ createdAt: -1 }).populate({
       path: "productDetail",
       populate: [
         { path: "product", select: "name" },

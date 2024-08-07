@@ -12,6 +12,7 @@ import ordeDetailRouter from "./oderDetail.js";
 import routerpurchasehistory from "./purchasehistory.js";
 import routerReview from "./review.js";
 import routerFavourite from "./favourite.js";
+import routerNew from "./new.js";
 
 const router = express.Router();
 router.use("/product", routerProduct);
@@ -22,9 +23,11 @@ router.use("/productDetail", routerProductDetail);
 router.use("/image", routerImage);
 router.use("/order", orderRouter);
 router.use("/infoProduct", routerInfoProduct);
-router.use("/cart", routerCart)
+router.use("/cart", routerCart);
 router.use("/oderDetail", ordeDetailRouter);
 router.use("/purchaseHistory", routerpurchasehistory);
 router.use("/review", routerReview);
-router.use("/favourite", routerFavourite)
+router.use("/favourite", routerFavourite);
+router.use("/news", routerNew); // Sử dụng routerNew
+
 export default router;

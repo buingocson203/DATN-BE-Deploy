@@ -1,8 +1,9 @@
-
 import mongoose from "mongoose";
+
 const DetailNewSchema = new mongoose.Schema({
   account: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // Tham chiếu đến mô hình User
     required: true,
   },
   date: {
@@ -22,7 +23,7 @@ const DetailNewSchema = new mongoose.Schema({
 
 const NewSchema = new mongoose.Schema({
   img: {
-    type: String, // Assuming this is a URL or a path to the image
+    type: String, // URL hoặc đường dẫn đến hình ảnh
     required: true,
   },
   title: {
@@ -37,4 +38,3 @@ const NewSchema = new mongoose.Schema({
 });
 
 export default mongoose.model('New', NewSchema);
-

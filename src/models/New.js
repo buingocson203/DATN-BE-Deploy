@@ -23,7 +23,7 @@ const DetailNewSchema = new mongoose.Schema({
 
 const NewSchema = new mongoose.Schema({
   img: {
-    type: String, // URL hoặc đường dẫn đến hình ảnh
+    type: String,
     required: true,
   },
   title: {
@@ -35,6 +35,10 @@ const NewSchema = new mongoose.Schema({
     required: true,
   },
   detailNew: [DetailNewSchema],
+  author: {
+    type: String, // Tên tác giả
+    required: true,
+  },
 });
 
 export default mongoose.model('New', NewSchema);

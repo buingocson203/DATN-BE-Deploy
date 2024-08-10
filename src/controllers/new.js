@@ -5,24 +5,24 @@ export const createNew = async (req, res) => {
   try {
     const { img, title, desc, detailNew } = req.body;
 
-    // Gán ID người dùng cho account trong detailNew
+    // Gán ID người dùng cho account trong detailNew và fullName cho author
     detailNew.account = req.user._id;
+    const author = req.user.fullName; // Lấy fullName từ user đăng nhập
 
     const newArticle = new New({
       img,
       title,
       desc,
       detailNew,
+      author, // Thêm author vào bài viết
     });
 
     await newArticle.save();
 
-    // Sử dụng `lean()` để chuyển đổi MongoDB document thành plain JavaScript object
     const formattedArticle = await New.findById(newArticle._id).lean();
 
-    // Loại bỏ _id trong detailNew
     formattedArticle.detailNew = formattedArticle.detailNew.map((detail) => {
-      const { _id, ...rest } = detail; // Rest operator để lấy tất cả trừ _id
+      const { _id, ...rest } = detail;
       return rest;
     });
 
@@ -100,15 +100,28 @@ export const updateNew = async (req, res) => {
     const { id } = req.params;
     const { img, title, desc, detailNew } = req.body;
 
-    const updatedArticle = await New.findByIdAndUpdate(id, { img, title, desc, detailNew }, { new: true }).lean(); // Sử dụng lean()
+    // Tìm bài viết hiện tại để lấy thông tin author
+    const existingArticle = await New.findById(id);
 
-    if (!updatedArticle) {
+    if (!existingArticle) {
       return res.status(404).json({
         message: "Article not found",
       });
     }
 
-    // Loại bỏ _id trong detailNew
+    // Cập nhật bài viết nhưng giữ nguyên author cũ
+    const updatedArticle = await New.findByIdAndUpdate(
+      id,
+      {
+        img,
+        title,
+        desc,
+        detailNew,
+        author: existingArticle.author, // Giữ nguyên author
+      },
+      { new: true, lean: true }
+    );
+
     updatedArticle.detailNew = updatedArticle.detailNew.map((detail) => {
       const { _id, ...rest } = detail;
       return rest;
@@ -124,6 +137,7 @@ export const updateNew = async (req, res) => {
     });
   }
 };
+
 
 
 // Delete an article

@@ -34,7 +34,7 @@ export const createReview = async (req, res) => {
 
     const reviewPromises = order.productDetails.map(async (product, index) => {
       const { productId } = product;
-      const { content } = reviews[index];
+      const { content, rating } = reviews[index];
 
       // Tạo đánh giá mới cho từng sản phẩm
       const review = new Review({
@@ -42,6 +42,7 @@ export const createReview = async (req, res) => {
         productId: productId,
         content: content,
         isRated: true,
+        rating: rating,  // Thêm rating vào đánh giá
       });
 
       const savedReview = await review.save();
@@ -68,6 +69,8 @@ export const createReview = async (req, res) => {
     });
   }
 };
+
+
 export const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -81,13 +84,22 @@ export const getProductReviews = async (req, res) => {
     }
 
     // Lấy toàn bộ đánh giá của sản phẩm
-     const reviews = await Review.find({ productId })
+    const reviews = await Review.find({ productId })
       .populate("idAccount", "userName email")
       .populate("productId", "name");
 
+    // Tính số sao trung bình và số lượt đánh giá của sản phẩm
+    const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = reviews.length ? (totalRatings / reviews.length).toFixed(1) : 0;
+    const numberOfReviews = reviews.length;
+
     return res.status(200).json({
       message: "Fetch Product Reviews Successful",
-      data: reviews,
+      data: {
+        reviews,
+        averageRating,    // Số sao trung bình
+        numberOfReviews,  // Số lượt đánh giá
+      },
     });
   } catch (error) {
     return res.status(500).json({
@@ -95,6 +107,7 @@ export const getProductReviews = async (req, res) => {
     });
   }
 };
+
 
 export const getReviewDetail = async (req, res) => {
   try {
@@ -130,12 +143,19 @@ export const getReviewDetail = async (req, res) => {
       type: "thumbnail",
     });
 
+    // Tính số sao trung bình và số lượt đánh giá của sản phẩm
+    const reviews = await Review.find({ productId: product._id });
+    const totalRatings = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = reviews.length ? (totalRatings / reviews.length).toFixed(1) : 0;
+    const numberOfReviews = reviews.length;
+
     // Tạo đối tượng chứa thông tin chi tiết đánh giá và thông tin sản phẩm
     const reviewDetail = {
       review: {
         _id: review._id,
         idAccount: review.idAccount,
         content: review.content,
+        rating: review.rating,
         createdAt: review.createdAt,
         updatedAt: review.updatedAt,
       },
@@ -145,6 +165,8 @@ export const getReviewDetail = async (req, res) => {
         description: product.description,
         categoryId: product.categoryId,
         status: product.status,
+        averageRating: averageRating,   // Số sao trung bình
+        numberOfReviews: numberOfReviews, // Số lượt đánh giá
         productDetail: {
           _id: productDetail._id,
           quantity: productDetail.quantity,
@@ -179,15 +201,16 @@ export const getReviewDetail = async (req, res) => {
 
 
 
+
 export const getAllReview = async (req, res) => {
   try {
     // Lấy thông tin người dùng từ req (được set trong middleware checkPermission)
     const currentUser = req.user;
 
     // Kiểm tra nếu người dùng không phải là admin
-    if (currentUser.role !== 'admin') {
+    if (currentUser.role !== "admin") {
       return res.status(403).json({
-        message: 'Bạn không có quyền truy cập vào đánh giá',
+        message: "Bạn không có quyền truy cập vào đánh giá",
       });
     }
 
@@ -208,18 +231,31 @@ export const getAllReview = async (req, res) => {
           if (!product) {
             return null; // hoặc xử lý theo ý đồ của bạn khi không tìm thấy sản phẩm
           }
-    
+
           const productImages = await Image.find({
             productId: review.productId,
-            type: "thumbnail"
+            type: "thumbnail",
           }).select("image");
-    
+
+          // Tính số sao trung bình và số lượt đánh giá của sản phẩm
+          const productReviews = await Review.find({ productId: product._id });
+          const totalRatings = productReviews.reduce(
+            (sum, review) => sum + review.rating,
+            0
+          );
+          const averageRating = productReviews.length
+            ? (totalRatings / productReviews.length).toFixed(1)
+            : 0;
+          const numberOfReviews = productReviews.length;
+
           return {
             ...review._doc,
             productId: {
               ...product._doc,
-              images: productImages
-            }
+              images: productImages,
+              averageRating,    // Số sao trung bình
+              numberOfReviews,  // Số lượt đánh giá
+            },
           };
         } catch (error) {
           console.error("Error while processing review:", error);
@@ -230,7 +266,7 @@ export const getAllReview = async (req, res) => {
 
     return res.status(200).json({
       message: "Fetch All Reviews Successful",
-      data: formattedReviews,
+      data: formattedReviews.filter((review) => review !== null), // Loại bỏ những review không hợp lệ
     });
   } catch (error) {
     return res.status(500).json({

@@ -18,6 +18,12 @@ const reviewSchema = new mongoose.Schema({
     isRated: {
         type: Boolean,
         required: true
+    },
+    rating: {
+        type: Number,
+        required: true,
+        min: 1,  // Số sao tối thiểu là 1
+        max: 5   // Số sao tối đa là 5
     }
 },
 {

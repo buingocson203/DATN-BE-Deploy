@@ -3,6 +3,9 @@ import { productDetailValid } from "../validation/productDetail.js";
 import mongoose from "mongoose";
 import Image from "../models/Image.js";
 
+import Review from "../models/Review.js";
+
+
 export const create = async (req, res) => {
   try {
     const { error } = productDetailValid.validate(req.body);
@@ -49,6 +52,7 @@ export const create = async (req, res) => {
   }
 };
 
+
 export const getAllProductDetail = async (req, res) => {
   try {
     const productDetails = await ProductDetail.aggregate([
@@ -74,14 +78,36 @@ export const getAllProductDetail = async (req, res) => {
       {
         $unwind: "$sizes",
       },
+      // Lookup reviews to calculate average rating
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "product._id",
+          foreignField: "productId",
+          as: "reviews",
+        },
+      },
+      // Calculate average rating
+      {
+        $addFields: {
+          averageRating: {
+            $cond: {
+              if: { $gt: [{ $size: "$reviews" }, 0] }, // Check if there are any reviews
+              then: { $avg: "$reviews.rating" }, // Calculate average rating
+              else: 0, // Set to 0 if no reviews
+            },
+          },
+        },
+      },
       {
         $group: {
           _id: "$product._id",
           name: { $first: "$product.name" },
           productId: { $first: "$product._id" },
+          averageRating: { $first: "$averageRating" }, // Include the average rating in the group
           productDetails: {
             $push: {
-              productDetailId: "$_id", // Change from "$sizes._id" to "$_id"
+              productDetailId: "$_id",
               size: "$sizes.size",
               quantity: "$quantity",
               price: "$price",
@@ -110,6 +136,7 @@ export const getAllProductDetail = async (req, res) => {
   }
 };
 
+
 export const getDetailProductDetail = async (req, res) => {
   try {
     const { id } = req.params;
@@ -123,19 +150,31 @@ export const getDetailProductDetail = async (req, res) => {
 
     // Tìm chi tiết sản phẩm theo productDetailId và lấy thông tin sản phẩm và size
     const productDetail = await ProductDetail.findById(id)
-      .populate("product", "name") // Thay 'name' bằng các trường bạn muốn lấy từ Product
-      .populate("sizes", "size"); // Thay 'size' bằng các trường bạn muốn lấy từ Size
+      .populate("product", "name") // Lấy tên sản phẩm
+      .populate("sizes", "size"); // Lấy thông tin size
 
     if (!productDetail) {
       return res.status(404).json({
         message: "Không tìm thấy chi tiết sản phẩm",
       });
     }
-// Tìm ảnh sản phẩm loại "thumbnail"
-const thumbnailImage = await Image.findOne({
-  productId: productDetail.product._id,
-  type: "thumbnail",
-});
+
+    // Tìm ảnh sản phẩm loại "thumbnail"
+    const thumbnailImage = await Image.findOne({
+      productId: productDetail.product._id,
+      type: "thumbnail",
+    });
+
+    // Tìm các đánh giá liên quan đến sản phẩm để tính số sao trung bình
+    const reviews = await Review.find({ productId: productDetail.product._id });
+
+    // Tính số sao trung bình, nếu không có đánh giá nào thì số sao trung bình là 0
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((acc, review) => acc + review.rating, 0) /
+          reviews.length
+        : 0;
+
     // Xử lý thông tin chi tiết sản phẩm
     const formattedProductDetail = {
       productDetailId: productDetail._id,
@@ -147,6 +186,7 @@ const thumbnailImage = await Image.findOne({
       importPrice: productDetail.importPrice,
       promotionalPrice: productDetail.promotionalPrice,
       productImage: thumbnailImage ? thumbnailImage.image : null,
+      averageRating: averageRating, // Thêm số sao trung bình vào kết quả trả về
     };
 
     return res.status(200).json({

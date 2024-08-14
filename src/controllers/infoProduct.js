@@ -4,10 +4,8 @@ import ProductDetail from "../models/ProductDetail.js";
 import Category from "../models/Category.js";
 import Size from "../models/Size.js";
 import Image from "../models/Image.js"; // Import model Image
-
+import Review from "../models/Review.js"; // Import model
 const { ObjectId } = mongoose.Types;
-
-
 
 export const getInfoProductDetails = async (req, res) => {
   try {
@@ -22,15 +20,6 @@ export const getInfoProductDetails = async (req, res) => {
       page = 1,
       limit = 10,
     } = req.query;
-    console.log("Size query:", size);
-    console.log("Category query:", category);
-    console.log("Min Price query:", minPrice);
-    console.log("Max Price query:", maxPrice);
-    console.log("Sort query:", sort);
-    console.log("Name query:", name);
-    console.log("Latest query:", latest);
-    console.log("Page query:", page);
-    console.log("Limit query:", limit);
 
     let sortOption = {};
     if (sort === "desc") {
@@ -40,7 +29,6 @@ export const getInfoProductDetails = async (req, res) => {
     } else if (sort === "name") {
       sortOption = { nameProduct: 1 };
     } else {
-      // Sắp xếp theo createdAt để sản phẩm mới nhất lên đầu
       sortOption = { createdAt: -1 };
     }
 
@@ -55,7 +43,6 @@ export const getInfoProductDetails = async (req, res) => {
     let skip = (page - 1) * limit;
     let products;
 
-    // Nếu latest=true thì chỉ lấy 8 sản phẩm mới nhất
     if (latest === "true") {
       products = await Product.find(productFilter)
         .populate("categoryId")
@@ -65,7 +52,7 @@ export const getInfoProductDetails = async (req, res) => {
     } else {
       products = await Product.find(productFilter)
         .populate("categoryId")
-        .sort(sortOption) // Thêm sắp xếp vào truy vấn
+        .sort(sortOption)
         .skip(skip)
         .limit(parseInt(limit, 10))
         .lean();
@@ -116,8 +103,6 @@ export const getInfoProductDetails = async (req, res) => {
             },
           },
         ]);
-
-        console.log("Product Details with Size Filter:", productDetails);
       } else {
         productDetails = await ProductDetail.find(productDetailFilter)
           .populate("sizes")
@@ -127,6 +112,19 @@ export const getInfoProductDetails = async (req, res) => {
       if (!productDetails || productDetails.length === 0) {
         return null;
       }
+
+      // Tính số sao trung bình của sản phẩm
+      const productReviews = await Review.find({ productId: product._id });
+      const totalRatings = productReviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+
+      // Đảm bảo không chia cho 0 và tránh "NaN"
+      const averageRating =
+        productReviews.length > 0
+          ? (totalRatings / productReviews.length).toFixed(1)
+          : 0;
 
       const images = await Image.find({ productId: product._id }).lean();
 
@@ -145,6 +143,7 @@ export const getInfoProductDetails = async (req, res) => {
           imageUrl: image.image,
           type: image.type,
         })),
+        averageRating, // Số sao trung bình
         productDetails: productDetails.map((detail) => ({
           productDetailId: detail._id,
           quantity: detail.quantity,
@@ -178,7 +177,6 @@ export const getInfoProductDetails = async (req, res) => {
       });
     }
 
-    // Tính tổng số sản phẩm
     const totalProducts = await Product.countDocuments(productFilter);
 
     return res.status(200).json({
@@ -216,6 +214,17 @@ export const getProductDetailsById = async (req, res) => {
     // Lấy thông tin ảnh của sản phẩm
     const images = await Image.find({ productId: productId }).lean();
 
+    // Lấy thông tin đánh giá của sản phẩm
+    const productReviews = await Review.find({ productId });
+    const totalRatings = productReviews.reduce(
+      (sum, review) => sum + review.rating,
+      0
+    );
+    const averageRating =
+      productReviews.length > 0
+        ? (totalRatings / productReviews.length).toFixed(1)
+        : 0;
+
     const productData = {
       nameProduct: product.name,
       productId: product._id,
@@ -226,6 +235,7 @@ export const getProductDetailsById = async (req, res) => {
         imageUrl: image.image,
         type: image.type,
       })),
+      averageRating, // Thêm số sao trung bình vào dữ liệu trả về
       productDetails: productDetails.map((detail) => ({
         productDetailId: detail._id,
         quantity: detail.quantity,
@@ -310,7 +320,7 @@ export const getRelatedProducts = async (req, res) => {
       filteredProducts.push(...moreProducts);
     }
 
-    // Lấy thông tin chi tiết của từng sản phẩm liên quan
+    // Lấy thông tin chi tiết của từng sản phẩm liên quan và tính số sao trung bình
     const detailedFilteredProducts = await Promise.all(
       filteredProducts.map(async (p) => {
         const productDetails = await ProductDetail.find({ product: p._id })
@@ -318,8 +328,20 @@ export const getRelatedProducts = async (req, res) => {
           .lean();
         const images = await Image.find({ productId: p._id }).lean();
 
+        // Tính số sao trung bình của sản phẩm
+        const productReviews = await Review.find({ productId: p._id });
+        const totalRatings = productReviews.reduce(
+          (sum, review) => sum + review.rating,
+          0
+        );
+        const averageRating =
+          productReviews.length > 0
+            ? (totalRatings / productReviews.length).toFixed(1)
+            : 0;
+
         return {
           ...p,
+          averageRating, // Thêm số sao trung bình vào dữ liệu sản phẩm
           productDetails: productDetails.map((detail) => ({
             productDetailId: detail._id,
             quantity: detail.quantity,
@@ -348,3 +370,4 @@ export const getRelatedProducts = async (req, res) => {
     });
   }
 };
+

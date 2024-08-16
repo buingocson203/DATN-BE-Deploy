@@ -20,7 +20,7 @@ export const orderValid = Joi.object({
     })
   ),
   orderStatus: Joi.string()
-    .valid("pending", "waiting", "delivering", "done", "cancel")
+    .valid("pending", "waiting", "delivering", "done", "cancel", "fail")
     .default("pending"),
   paymentMethod: Joi.string().valid("cod", "vnpay").default("cod"),
   codeOrders: Joi.string().allow(null, '').required(),

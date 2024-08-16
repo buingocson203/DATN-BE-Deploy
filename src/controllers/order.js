@@ -190,7 +190,7 @@ export const updateOrder = async (req, res) => {
     const validTransitions = {
       pending: ["waiting", "cancel"], // Chỉ admin có thể chuyển từ pending sang waiting hoặc cancel
       waiting: ["delivering", "done", "cancel"], // Chỉ admin có thể chuyển từ waiting sang cancel
-      delivering: ["done", "cancel"],
+      delivering: ["done", "cancel", "fail"], // Chỉ cho phép delivering được update lên fail
       done: ["cancel"],
       cancel: [],
     };
